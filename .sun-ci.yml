@@ -1,0 +1,42 @@
+stages:
+- Check source code 🔎
+- Release 🔖
+
+jobs:
+- name: Lint and Test with Tox
+  stage: Check source code 🔎
+  image: python:3.6
+  script:
+  - pip3 install tox
+  - tox
+  coverage:
+    type: cobertura
+    path: coverage.xml
+  artifacts:
+    name: coverage
+    paths:
+      - htmlcov
+    expires_in: 3 days
+  cache:
+  - key:
+      files:
+      - tox.ini
+      - setup.py
+    paths:
+    - .tox/python3.*
+    - .tox/.package
+  except:
+    messages:
+      - '/\[ci skip ci\]/'
+
+- name: Check Typing with mypy
+  stage: Check source code 🔎
+  image: python:3
+  script:
+    - pip3 install mypy types-setuptools
+    - python3 setup.py develop
+    - mypy table_reconstruction
+  allow_failure: true
+  except:
+    messages:
+      - '/\[ci skip ci\]/'
