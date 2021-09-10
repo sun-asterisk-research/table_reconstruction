@@ -10,6 +10,9 @@ here = pathlib.Path(__file__).parent.resolve()
 
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 setup(
     name="table_reconstruction",
     use_scm_version=True,
@@ -23,5 +26,8 @@ setup(
     project_urls={
         "Bug Tracker": "{}/issues".format(home_page),
     },
+    include_package_data=True,
     python_requires=">=3.6",
+    install_requires=requirements,
+
 )
