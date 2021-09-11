@@ -60,26 +60,24 @@ def minAreaRect(coords):
     return [xmin, ymin, xmax, ymax]
 
 def solve(box):
-     """
-     x = cx - w / 2
-     y = cy - h / 2
-     x1 - cx = -w /2 * cos(angle) + h/2 * sin(angle)
-     y1 - cy= -w /2 * sin(angle) - h/2 * cos(angle)
-     
-     h(x1-cx) = -wh/2 * cos(angle) + hh/2 * sin(angle)
-     w(y1 -cy)= -ww/2 * sin(angle) - hw/2 * cos(angle)
-     (hh + ww)/ 2sin(angle) = h(x1-cx) - w(y1 -cy)
-     """
-     x1, y1, x2, y2, x3, y3, x4, y4= box[:8]
-     cx = (x1 + x3 + x2 + x4)/4.0
-     cy = (y1 + y3 + y4 + y2)/4.0
-     w = (np.sqrt((x2 - x1)**2 + (y2 - y1)**2) + np.sqrt((x3 - x4)**2 + (y3 - y4)**2))/2
-     h = (np.sqrt((x2 - x3)**2 + (y2 - y3)**2) + np.sqrt((x1 - x4)**2 + (y1 - y4)**2))/2
-     
-     sinA = (h * (x1 - cx) -w * (y1 - cy)) * 1.0/(h * h + w * w) * 2
-     angle = np.arcsin(sinA)
+    """Caculate angle, width, height, the center coordinate of box
 
-     return angle, w, h, cx, cy
+    Args:
+        box (list): the coordinate of region
+
+    Returns:
+        tuple: (angle, width, height, center x, center y)
+    """
+    x1, y1, x2, y2, x3, y3, x4, y4= box[:8]
+    cx = (x1 + x3 + x2 + x4)/4.0
+    cy = (y1 + y3 + y4 + y2)/4.0
+    w = (np.sqrt((x2 - x1)**2 + (y2 - y1)**2) + np.sqrt((x3 - x4)**2 + (y3 - y4)**2))/2
+    h = (np.sqrt((x2 - x3)**2 + (y2 - y3)**2) + np.sqrt((x1 - x4)**2 + (y1 - y4)**2))/2
+
+    sinA = (h * (x1 - cx) -w * (y1 - cy)) * 1.0/(h * h + w * w) * 2
+    angle = np.arcsin(sinA)
+
+    return angle, w, h, cx, cy
 
 def _order_points(pts):
     """Extract top left. top right, bottom left, bottom right of region
@@ -109,7 +107,7 @@ def image_location_sort_box(box):
         box (list): the coordinate of region
 
     Returns:
-        [type]: [description]
+        [list]: the sorted coordinate of region
     """
     x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
     pts = (x1, y1),(x2, y2),(x3, y3),(x4, y4)
