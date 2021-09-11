@@ -1,5 +1,5 @@
 from shapely.geometry import LineString
-from tsr.utils.lines_utils import is_line
+from table_reconstruction.utils.lines_utils import is_line
 import numpy as np
 
 def get_intersection_points(horizontal_lines:list, vertical_lines:list, tab_coord:list) -> tuple:
@@ -56,7 +56,7 @@ def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:
     """This is a function to check whether the coordinate is the coordinate of an existing cell or not.
 
     Args:
-        cell_coord (List): The coordinate of cell has form [x_min, y_min, x_max, y_max]
+        cell_coord (list): The coordinate of cell has form [x_min, y_min, x_max, y_max]
         thresh (float): [description]
 
     Returns:
