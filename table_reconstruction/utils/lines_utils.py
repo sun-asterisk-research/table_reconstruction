@@ -3,7 +3,6 @@ from scipy.spatial import distance as dist
 import numpy as np
 from table_reconstruction.utils.mask_utils import get_horizontal_lines_mask, get_vertical_lines_mask
 import cv2
-import matplotlib.pyplot as plt
 
 
 def get_table_line(binimg:np.array, axis=0,lineW=5):
