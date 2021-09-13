@@ -26,13 +26,6 @@ jobs:
       paths:
         - htmlcov
       expires_in: 3 days
-    cache:
-      - key:
-          files:
-            - tox.ini
-            - setup.py
-        paths:
-          - .tox
     except:
       messages:
         - '/\[ci skip ci\]/'
