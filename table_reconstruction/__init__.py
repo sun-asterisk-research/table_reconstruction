@@ -1,4 +1,5 @@
 from pkg_resources import get_distribution, DistributionNotFound
+
 __version__ = None
 try:
     __version__ = get_distribution("table_reconstruction").version
