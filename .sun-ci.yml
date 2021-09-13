@@ -41,7 +41,7 @@ jobs:
   script:
     - pip3 install mypy types-setuptools opencv-python-headless
     - python3 setup.py develop
-    - mypy table_reconstruction --install-types  --ignore-missing-imports
+    - mypy table_reconstruction --install-types --non-interactive --ignore-missing-imports
   allow_failure: true
   except:
     messages:
