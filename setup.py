@@ -1,6 +1,7 @@
-from setuptools import setup, find_packages
 import pathlib
 import sys
+
+from setuptools import find_packages, setup
 
 home_page = "https://github.com/sun-asterisk-research/table_reconstruction"
 assert sys.version_info >= (3, 6, 2), "table_reconstruction requires Python 3.6.2+"
