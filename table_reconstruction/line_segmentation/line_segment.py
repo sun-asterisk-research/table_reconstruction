@@ -1,6 +1,5 @@
-import logging
 import os
-
+import logging
 from typing import Tuple
 
 import gdown
@@ -11,47 +10,75 @@ import cv2
 from torchvision import transforms
 from PIL import Image
 
-from .dataset import BasicDataset
 from .utils import load_model_unet
 
 
-MODEL_PATH = os.path.abspath("tmp/repvgg_weight_v3.pth")
-WEIGHT_URL = "https://drive.google.com/u/1/uc?id=16atStSuFjpgwX54E2bvT6q8LF_1MyjiY"
+MODEL_PATH = os.path.dirname(os.path.abspath(__file__)) + "/tmp/resnet_weight.pth"
+WEIGHT_URL = "https://drive.google.com/u/0/uc?id=18YEiAzUs9NXz0FwBuU0JicEWc_F2V7tq"
 
 
-class LineDetector:
-    def __init__(self, model_path: str = MODEL_PATH, device: str = "cpu"):
+class LineSegmentation:
+    def __init__(
+        self,
+        model_path: str = None,
+        device: torch.device = torch.device("cpu"),
+    ):
+        """The constructor of class LineSegmentation which creates object
+        for segmenting lines in table images
+
+        Args:
+            model_path (str): path to model weight
+            device (torch.device, optional): torch device. Defaults to "cpu".
+        """
         self.device = device
-        if not os.path.exists(MODEL_PATH):
-            logging.info("Downloading weight of model...")
-            if not os.path.exists(os.path.abspath("tmp/")):
-                os.mkdir(os.path.abspath("tmp/"))
-            gdown.download(url=WEIGHT_URL, output=MODEL_PATH, quiet=False)
-        self.model = load_model_unet(model_path, device)
+        if model_path is None:
+            if not os.path.exists(MODEL_PATH):
+                logging.info("Obtain weight of model...")
+                dir_path = os.path.dirname(os.path.abspath(__file__))
+                if not os.path.exists(dir_path + "/tmp/"):
+                    os.mkdir(dir_path + "/tmp/")
+                try:
+                    gdown.download(url=WEIGHT_URL, output=MODEL_PATH, quiet=False)
+                except Exception as e:
+                    logging.info("Could not download weight, please try again!")
+                    logging.info(f"Error code: {e}")
+            self.model = load_model_unet(MODEL_PATH, device)
+        else:
+            if os.path.exists(model_path):
+                self.model = load_model_unet(model_path, device)
+            else:
+                raise ValueError(f"Could not find weight file at {model_path}")
 
     def predict(
-        self, img_path: str, scale_factor: float = 0.5, out_threshold: float = 0.5
+        self,
+        img: np.ndarray,
+        scale_factor: float = 0.5,
+        out_threshold: float = 0.5,
     ) -> np.ndarray:
         """Take input as an table image and return a mask of the same size
         as the input image and each pixel has a value of 1 if that pixel belongs
         to a line otherwise it will be 0.
 
         Args:
-            img_path (str): path to table image
-            scale_factor (float, optional): factor for dowscaling original image. Defaults to 0.5.
+            img (np.array): table image
+            scale_factor (float, optional): factor for downscaling original image.
+            Defaults to 0.5.
             out_threshold (float, optional): confidence threshold. Defaults to 0.5.
 
         Returns:
             numpy.ndarray: mask image has same size with original image
         """
         self.model.eval()
-        preprocessed_img, pad = self.preprocess_img(img_path)
-        img = torch.from_numpy(BasicDataset.preprocess(preprocessed_img, scale_factor))
-        img = img.unsqueeze(0)
-        img = img.to(device=self.device, dtype=torch.float32)
+        padding_pil_img, preprocessed_img, pad = self.preprocess(
+            img=img,
+            scale=scale_factor,
+        )
+        ts_img = torch.from_numpy(preprocessed_img)
+        ts_img = ts_img.unsqueeze(0)
+        ts_img = ts_img.to(device=self.device, dtype=torch.float32)
 
         with torch.no_grad():
-            output = self.model(img)
+            output = self.model(ts_img)
             probs = torch.sigmoid(output)
             probs = probs.squeeze(0)
             tf = transforms.Compose(
@@ -60,31 +87,51 @@ class LineDetector:
                     transforms.ToTensor(),
                 ]
             )
-
             probs = tf(probs.cpu())
             full_mask = probs.squeeze().cpu().numpy()
             mask = full_mask > out_threshold
-            mask = self.normalize(preprocessed_img, mask_img=mask)
+            mask = self.normalize(padding_pil_img, mask_img=mask)
             mask = np.array(mask[pad:-pad, pad:-pad])
             return mask
 
-    def preprocess_img(self, img_path: str, pad: int = 5) -> Tuple[Image.Image, int]:
-        """Add pad to table image from path
+    def preprocess(
+        self,
+        img: np.ndarray,
+        scale: float,
+        pad: int = 5,
+    ) -> Tuple[Image.Image, np.ndarray, int]:
+        """Add pad to table image from path then resize image
 
         Args:
-            img_path (str): Path to table image
+            img (np.array): table image
+            scale (float): Scale factor
             pad (int, optional): Pad to add to image. Defaults to 5.
 
         Returns:
-            PIL.Image.Image: image after padding
+            PIL.Image.Image: PIL image for size-recovering purpose
+            numpy.array: image after preprocessing
             int: pad value for size-recovering purpose
         """
-        img = cv2.imread(img_path)
+        # Padding
         h, w, _ = img.shape
+        assert pad >= 0, "Pad must great than 0"
         padding_img = np.ones((h + pad * 2, w + pad * 2, 3), dtype=np.uint8) * 255
-        padding_img[pad:h + pad, pad:w + pad, :] = img
-        preprocessed_img = Image.fromarray(padding_img)
-        return preprocessed_img, pad
+        padding_img[pad: h + pad, pad: w + pad, :] = img
+        pil_img = Image.fromarray(padding_img)
+
+        # Resize
+        newW, newH = int(scale * (w + pad * 2)), int(scale * (h + pad * 2))
+        assert newW > 0 and newH > 0, "Scale is too small"
+        rz_pil_img = pil_img.resize((newW, newH))
+        img_nd = np.array(rz_pil_img)
+
+        if len(img_nd.shape) == 2:
+            img_nd = np.expand_dims(img_nd, axis=2)
+        # HWC to CHW
+        img_trans = img_nd.transpose((2, 0, 1))
+        if img_trans.max() > 1:
+            img_trans = img_trans / 255
+        return pil_img, img_trans, pad
 
     def normalize(self, img: Image.Image, mask_img: np.ndarray) -> np.ndarray:
         """Convert shape of mask image to shape of img
