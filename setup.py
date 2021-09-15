@@ -10,13 +10,16 @@ here = pathlib.Path(__file__).parent.resolve()
 
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
-print(find_packages(where=".", exclude=["tests"]))
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
 setup(
     name="table_reconstruction",
-    use_scm_version=True,
+    use_scm_version={
+        "write_to": "table_reconstruction/__version__.py",
+        "version_scheme": "guess-next-dev",
+        "local_scheme": "no-local-version",
+    },
     author="Sun* AI Research",
     author_email="sun.converter.team@gmail.com",
     setup_requires=["setuptools_scm"],
@@ -32,4 +35,10 @@ setup(
     install_requires=requirements,
     package_dir={"": "."},
     packages=find_packages(where=".", exclude=["tests"]),
+    command_options={
+        "build_sphinx": {
+            "project": ("setup.py", "Table Reconstruction"),
+            "source_dir": ("setup.py", "docs/source"),
+        }
+    },
 )
