@@ -1,7 +1,7 @@
 from torch import nn
 from torch.nn.modules.batchnorm import BatchNorm2d
 
-from .unet_parts import *
+from .unet_parts import Up, OutConv
 
 
 def conv(ni, nf, ks=3, stride=1, act=True, bn=True):
@@ -60,20 +60,17 @@ class ResBlock(nn.Module):
 
 
 class ResUnet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=True):
+    def __init__(self, n_classes, bilinear=True):
         super(ResUnet, self).__init__()
-        self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
 
         self.stem = _resnet_stem(3, 32, 32, 64)
         self.pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.block1 = block(64, 64, 0, stride=1, nblocks=2)
-        self.block2 = block(64, 128, 0, stride=2, nblocks=2)
-        self.block3 = block(128, 256, 0, stride=2, nblocks=2)
-        self.block4 = block(256, 512, 0, stride=2, nblocks=2)
-
-        factor = 2 if bilinear else 1
+        self.block1 = block(64, 64, 0, stride=1, nblocks=3)
+        self.block2 = block(64, 128, 0, stride=2, nblocks=4)
+        self.block3 = block(128, 256, 0, stride=2, nblocks=6)
+        self.block4 = block(256, 512, 0, stride=2, nblocks=3)
 
         self.up6 = Up(512 + 256, 256, bilinear)
         self.up5 = Up(256 + 128, 128, bilinear)
@@ -95,7 +92,7 @@ class ResUnet(nn.Module):
 
         h = self.up6(d6, d5)  # 512 + 256 -> 256
         h = self.up5(h, d4)  # 256 + 128 -> 128
-        h = self.up4(h, d3)  
+        h = self.up4(h, d3)  #
         h = self.up3(h, d2)
         h = self.up2(h, d1)
         h = self.up1(h, x)
