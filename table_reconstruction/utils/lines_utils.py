@@ -1,3 +1,4 @@
+from typing import List, Tuple
 from skimage import measure
 from scipy.spatial import distance as dist
 import numpy as np
@@ -5,17 +6,20 @@ from table_reconstruction.utils import mask_utils
 import cv2
 
 
-def get_table_line(binimg, axis, lineW=5):
+def get_table_line(
+    binimg: np.ndarray,
+    axis: int,
+    lineW: int = 5) -> List[List]:
     """Extract the coordinate of lines from table binary image
 
     Args:
-        binimg (np.array): Table binary image
-        axis (int, optional): if 0, extracted line is horizontal lines,
+        binimg (np.ndarray): Table binary image
+        axis (int): if 0, extracted line is horizontal lines,
         otherwise extracted line is vertical lines.
         lineW (int, optional): The minimum line width. Defaults to 5.
 
     Returns:
-        list: The coordinate of extracted line.
+        List[List]: The coordinate of extracted line.
     """
     labels = measure.label(binimg > 0, connectivity=2)
     regions = measure.regionprops(labels)
@@ -33,14 +37,14 @@ def get_table_line(binimg, axis, lineW=5):
     return lineboxes
 
 
-def minAreaRect(coords):
+def minAreaRect(coords: np.ndarray) -> List:
     """Get coordinate of line
 
     Args:
         coords (ndarray): Coordinate list (row, col) of the region. has shape (N, 2)
 
     Returns:
-        list: The coordinate of line
+        List: The coordinate of line
     """
     rect = cv2.minAreaRect(coords[:, ::-1])
     box = cv2.boxPoints(rect)
@@ -65,14 +69,14 @@ def minAreaRect(coords):
     return [xmin, ymin, xmax, ymax]
 
 
-def solve(box):
+def solve(box: List) -> Tuple[int, int, int, int, int]:
     """Caculate angle, width, height, the center coordinate of box
 
     Args:
-        box (list): the coordinate of region
+        box (List): the coordinate of region
 
     Returns:
-        tuple: (angle, width, height, center x, center y)
+        Tuple[int, int, int, int, int]: (angle, width, height, center x, center y)
     """
     x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
     cx = (x1 + x3 + x2 + x4) / 4.0
@@ -86,7 +90,7 @@ def solve(box):
     return angle, w, h, cx, cy
 
 
-def _order_points(pts):
+def _order_points(pts: np.ndarray) -> np.ndarray:
     """Extract top left. top right, bottom left, bottom right of region
 
     Args:
@@ -108,14 +112,14 @@ def _order_points(pts):
     return np.array([tl, tr, br, bl], dtype="float32")
 
 
-def image_location_sort_box(box):
+def image_location_sort_box(box: List) -> List:
     """Sort and extract the coordinate of points
 
     Args:
-        box (list): the coordinate of region
+        box (List): the coordinate of region
 
     Returns:
-        list: the sorted coordinate of region
+        List: the sorted coordinate of region
     """
     x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
     pts = (x1, y1), (x2, y2), (x3, y3), (x4, y4)
@@ -125,17 +129,20 @@ def image_location_sort_box(box):
     return [x1, y1, x2, y2, x3, y3, x4, y4]
 
 
-def get_lines_coordinate(line_mask, axis, ths=30):
+def get_lines_coordinate(
+    line_mask: np.ndarray,
+    axis: int,
+    ths: int = 30) -> List[List]:
     """Extract coordinate of line from  binary image
 
     Args:
-        line_mask (np.array): the line binary image
+        line_mask (np.ndarray): the line binary image
         axis (int): if axis=0, line_mask is horizontal lines binary image,
         otherwise line_mask is vertical lines binary image.
         ths (int, optional): The threshold value to ignore noise edge.
 
     Returns:
-        list: the coordinate of lines.
+        List[List]: the coordinate of lines.
     """
 
     boxes = get_table_line(line_mask, axis=axis, lineW=ths)
@@ -158,15 +165,15 @@ def get_lines_coordinate(line_mask, axis, ths=30):
     return np.array(lines_coordinate)
 
 
-def get_table_coordinate(hor_lines_coord, ver_lines_coord):
+def get_table_coordinate(hor_lines_coord: List[List], ver_lines_coord: List[List]) -> List:
     """Extract the coordinate of table in image
 
     Args:
-        hor_lines_coord (list): The coordinate of horizontal lines
-        ver_lines_coord (list): The coordinate of vertical lines
+        hor_lines_coord (List[List]): The coordinate of horizontal lines
+        ver_lines_coord (List[List]): The coordinate of vertical lines
 
     Returns:
-        list: The coordinat of table has form (xmin, ymin, xmax, ymax)
+        List: The coordinat of table has form (xmin, ymin, xmax, ymax)
     """
     hor_lines_coord = np.array(hor_lines_coord)
     ver_lines_coord = np.array(ver_lines_coord)
@@ -176,21 +183,25 @@ def get_table_coordinate(hor_lines_coord, ver_lines_coord):
     tab_x2 = max(max(hor_lines_coord[:, 2]), max(ver_lines_coord[:, 2]))
     tab_y2 = max(max(hor_lines_coord[:, 3]), max(ver_lines_coord[:, 3]))
 
-    return tab_x1, tab_y1, tab_x2, tab_y2
+    return [tab_x1, tab_y1, tab_x2, tab_y2]
 
 
-def remove_noise(hor_lines, ver_lines, ths=15, noise_edge_ths=0.5):
+def remove_noise(
+    hor_lines: List[List],
+    ver_lines: List[List],
+    ths: int = 15,
+    noise_edge_ths: float = 0.5) -> Tuple[List[List], List[List]]:
     """Remove noise edge from image
 
     Args:
-        hor_lines (list): The coordinate of horizontal lines
-        ver_lines (list): The coordinate of vertical lines
+        hor_lines (List[List]): The coordinate of horizontal lines
+        ver_lines (List[List]): The coordinate of vertical lines
         ths (int, optional): Threshold value to group lines which has same coordinate.
         noise_edge_ths (float, optional): Threshold value check whether
         the line is noise edge or not.
 
     Returns:
-        tuple: The coordinate of horizontal and vertical lines.
+        Tuple[List[List], List[List]]: The coordinate of horizontal and vertical lines.
     """
     hor_mask = np.array([True] * len(hor_lines))
     ver_mask = np.array([True] * len(ver_lines))
@@ -252,7 +263,10 @@ def remove_noise(hor_lines, ver_lines, ths=15, noise_edge_ths=0.5):
     return hor_lines[hor_mask], ver_lines[ver_mask]
 
 
-def get_coordinates(mask, ths=5, kernel_len=10):
+def get_coordinates(
+    mask: np.ndarray,
+    ths: int = 5,
+    kernel_len: int = 10) -> Tuple[List, List[List], List[List]]:
     """This function extract the coordinate of table, horizontal and vertical lines.
 
     Args:
@@ -263,7 +277,7 @@ def get_coordinates(mask, ths=5, kernel_len=10):
         kernel_len (int, optional): The size of kernel is applied.
 
     Returns:
-        tuple: Tuple contain the coordinate of table, vertical and horizontal lines.
+        Tuple[List, List[List], List[List]]: Tuple contain the coordinate of table, vertical and horizontal lines.
     """
 
     # get horizontal lines mask image
@@ -313,17 +327,20 @@ def get_coordinates(mask, ths=5, kernel_len=10):
     return [tab_x1, tab_y1, tab_x2, tab_y2], new_ver_lines, new_hor_lines
 
 
-def normalize_v1(lines, axis, ths=10):
+def normalize_v1(
+    lines: List[List],
+    axis: int,
+    ths: int = 10) -> List[List]:
     """Normalize the coordinate of vertical lines or horizontal lines
 
     Args:
-        lines (list): The coordinate of horizontal lines or vertical lines.
+        lines (List[List]): The coordinate of horizontal lines or vertical lines.
         axis (int): If 0, lines is horizontal lines, otherwise vertical lines.
         ths (int, optional): Threshold value to group the lines
         has same x or y coordinate.
 
     Returns:
-        list: The normalized coordinate of lines.
+        List[List]: The normalized coordinate of lines.
     """
     filter_lines = np.array(lines.copy())
     id_range = np.arange(len(filter_lines))
@@ -389,15 +406,17 @@ def normalize_v1(lines, axis, ths=10):
     return filter_lines
 
 
-def normalize_v2(ver_lines_coord, hor_lines_coord):
+def normalize_v2(
+    ver_lines_coord:List[List],
+    hor_lines_coord:List[List]) -> Tuple(List[List], List[List]):
     """ Normalize the coordinate between vertical lines and horizontal lines
 
     Args:
-        ver_lines_coord (list): The coordinate of vertical lines
-        hor_lines_coord (list): The coordinate of horizontal lines
+        ver_lines_coord (List[List]): The coordinate of vertical lines
+        hor_lines_coord (List[List]): The coordinate of horizontal lines
 
     Returns:
-        tuple: the normalized coordinate of horizontal and vertical lines
+        Tuple(List[List], List[List]): the normalized coordinate of horizontal and vertical lines
     """
     ver_lines_coord = np.array(ver_lines_coord)
     hor_lines_coord = np.array(hor_lines_coord)
@@ -465,7 +484,11 @@ def normalize_v2(ver_lines_coord, hor_lines_coord):
     return hor_lines_coord, ver_lines_coord
 
 
-def is_line(line, lines, axis, ths):
+def is_line(
+    line: List,
+    lines: List[List],
+    axis: int,
+    ths: float) -> bool:
     """Check whether the coordinate is the coordinate of an existing line or not.
 
     Args:
@@ -475,7 +498,7 @@ def is_line(line, lines, axis, ths):
         thresh (float): The threshold value to group line which has same x, y coordinate
 
     Returns:
-        bool: returns True if the coordinate is coordinate of an existing line,
+        Bool: returns True if the coordinate is coordinate of an existing line,
         otherwise returns False
     """
     x1, y1, x2, y2 = line

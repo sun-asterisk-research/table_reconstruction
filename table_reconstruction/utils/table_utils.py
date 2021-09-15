@@ -1,8 +1,8 @@
+from typing import List, Tuple, Dict
 import numpy as np
 
-
 class DirectedGraph(object):
-    def __init__(self, nb_vertices):
+    def __init__(self, nb_vertices: int):
         """Initialize DirectedGraph class
 
         Args:
@@ -13,7 +13,7 @@ class DirectedGraph(object):
         self.undirected_vertex = [[] for i in range(nb_vertices)]
         self.span_cell_ids = []
 
-    def add_edge(self, id_a, id_b):
+    def add_edge(self, id_a: int, id_b: int):
         """Add edge to graph
 
         Args:
@@ -33,11 +33,11 @@ class DirectedGraph(object):
         if len(self.adj[id_a]) > 1 and id_a not in self.span_cell_ids:
             self.span_cell_ids.append(id_a)
 
-    def add_edges(self, couple_ids):
+    def add_edges(self, couple_ids: List):
         """Add index of vertices (cell) to graph
 
         Args:
-            couple_ids (list): the list index of couple vertice indexes
+            couple_ids (List): the list index of couple vertice indexes
         """
         for couple_id in couple_ids:
             id_a, id_b = couple_id
@@ -47,7 +47,7 @@ class DirectedGraph(object):
             if len(self.adj[span_cell_id]) == 1:
                 self.span_cell_ids.append(self.adj[span_cell_id][0])
 
-    def check_span_cell(self, vertex_id):
+    def check_span_cell(self, vertex_id: int) -> bool:
         """Check whether cell is span cell or not
 
         Args:
@@ -62,13 +62,13 @@ class DirectedGraph(object):
 
         return False
 
-    def dfs(self, v, dp, vis):
+    def dfs(self, v: int, dp: List, vis: List):
         """Use Depth First Search algorithm to search longest path from specific vertex.
 
         Args:
             v (int): the index of specific cell
-            dp (list): distances to all vertices
-            vis (list): visited status
+            dp (List): distances to all vertices
+            vis (List): visited status
         """
         vis[v] = True
 
@@ -81,7 +81,7 @@ class DirectedGraph(object):
             # store the max of the paths
             dp[v] = max(dp[v], 1 + dp[self.adj[v][i]])
 
-    def findLongestPath(self):
+    def findLongestPath(self) -> int:
         """Function that returns the longest path in graph
 
         Returns:
@@ -102,13 +102,12 @@ class DirectedGraph(object):
         return max(dp) + 1
 
 
-def convertId2DocxCoord(cell_id, nb_col):
+def convertId2DocxCoord(cell_id: int, nb_col: int) -> Tuple[int, int]:
     """Find the XY coordinate of a know point
 
     Args:
         cell_id (int): the index of cell
-        nb_row ([type]): the number rows of table
-        nb_col ([type]): the number columns of table
+        nb_col (int): the number columns of table
 
     Returns:
         tuple: the XY coordiante corresponding to the index of cell
@@ -119,18 +118,23 @@ def convertId2DocxCoord(cell_id, nb_col):
     return x, y
 
 
-def convertSpanCell2DocxCoord(cells, fake_cells, span_cell_ids, nb_col, thresh=5):
+def convertSpanCell2DocxCoord(
+    cells: List[List],
+    fake_cells: List[List],
+    span_cell_ids: List,
+    nb_col: int,
+    thresh: int = 5) -> List[Dict]:
     """Find the XY coordinate of span cells
 
     Args:
-        cells (list): the coordinate of cells
-        fake_cells (list): the coordinate of fake cells
-        span_cell_ids (list): the index of span cells
+        cells (List[List]): the coordinate of cells
+        fake_cells (List[List]): the coordinate of fake cells
+        span_cell_ids (List): the index of span cells
         nb_col (int): number columns in table
         thresh (int, optional): threshold value to group the same x, y coordinate.
 
     Returns:
-        list: the XY coordinate of span cells
+        List[Dict]: the XY coordinate of span cells
     """
     fake_x1_coords = np.array(fake_cells)[:, 0]
     fake_x2_coords = np.array(fake_cells)[:, 1]

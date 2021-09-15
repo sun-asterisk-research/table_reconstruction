@@ -1,18 +1,22 @@
+from typing import List, Tuple
 from shapely.geometry import LineString
 from table_reconstruction.utils.lines_utils import is_line
 import numpy as np
 
 
-def get_intersection_points(horizontal_lines, vertical_lines, tab_coord):
+def get_intersection_points(
+    horizontal_lines:List[List],
+    vertical_lines:List[List],
+    tab_coord:List) -> Tuple[List, List]:
     """This a function which find the coordinate (x, y) of intersection points
 
     Args:
-        horizontal_lines (list): The coordinate of horizontal lines
-        vertical_lines (list): The coordinate of vertical lines
-        tab_coord (list): The coordinate of table
+        horizontal_lines (List[List]): The coordinate of horizontal lines
+        vertical_lines (List[List]): The coordinate of vertical lines
+        tab_coord (List): The coordinate of table
 
     Returns:
-        tuple: The tuple contains intersection points and fake intersection points
+        Tuple[List, List]: The tuple contains intersection points and fake intersection points
     """
 
     intersect_points = []
@@ -52,16 +56,19 @@ def get_intersection_points(horizontal_lines, vertical_lines, tab_coord):
     return intersect_points, fake_intersect_points
 
 
-def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:
+def is_cell_existed(
+    cell_coord: List[List],
+    thresh: float,
+    *lines) -> bool:
     """This is a function to check whether the coordinate is
     the coordinate of an existing cell or not.
 
     Args:
-        cell_coord (list): The coordinate of cell
+        cell_coord (List[List]): The coordinate of cell
         thresh (float): The threshold value to group line which has same x, y coordinate
 
     Returns:
-        bool: returns True if the coordinate is the coordinate of an existing cell,
+        Bool: returns True if the coordinate is the coordinate of an existing cell,
         otherwise returns False
     """
     x1, y1, x2, y2 = cell_coord
@@ -86,18 +93,21 @@ def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:
     return True
 
 
-def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple:
+def get_bottom_right_corner(
+    pred_point: Tuple,
+    points: List[List],
+    ths: int = 5) -> Tuple[int, int]:
     """This is a function which find the coordinates of bottom right point of
     a cell by coordinate of top left point
 
     Args:
-        pred_point (tuple): The top left point has form (x, y)
-        points (list): The list of intersection points has form [[x, y]]
+        pred_point (Tuple): The top left point has form (x, y)
+        points (List[List]): The list of intersection points has form [[x, y]]
         ths (int, optional): The threshold to find the coordinate of point
         on y-axis which is nearest to top left point. Defaults to 5.
 
     Returns:
-        tuple: The coordinate of bottom right point has form [x, y]
+        Tuple: The coordinate of bottom right point has form [x, y]
     """
     dup_pred_point = np.array(list(pred_point) * len(points)).reshape(len(points), -1)
     minus_arr = abs(dup_pred_point - points)
@@ -114,17 +124,21 @@ def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple:
         return (bottom_right_vertices[0], bottom_right_vertices[1])
 
 
-def calculate_cell_coordinate(points, fake_flag, ths, *lines):
+def calculate_cell_coordinate(
+    points: List[List],
+    fake_flag: bool,
+    ths: int,
+    *lines: List) -> List[List]:
     """This is a function which find the coordinate of cells in table
 
     Args:
-        points (list): The list of the coordinate of intersection points
-        fake_flag (bool): if True, this method extract fake the coordinate of points,
+        points (List[List]): The list of the coordinate of intersection points
+        fake_flag (Bool): if True, this method extract fake the coordinate of points,
         otherwise find the real coordinate of points
         ths (int): The threshold value to find the coordinate of point o
         n y-axis which is nearest to top left point. Defaults to 5.
     Returns:
-        list: The coordinate of cells.
+        List[List]: The coordinate of cells.
     """
     cells = []
     x_coords = np.array(points[:, 0])
@@ -170,15 +184,17 @@ def calculate_cell_coordinate(points, fake_flag, ths, *lines):
     return cells
 
 
-def sort_cell(cells, ths=5):
+def sort_cell(
+    cells: List[List],
+    ths: int=5) -> List[List]:
     """Sort cells from left to right and top to bottom
 
     Args:
-        cells (list): The coordinate of cells.
+        cells (List[List]): The coordinate of cells.
         ths (int, optional): The threshold value to group cells has same y coordinate.
 
     Returns:
-        list: The sorted coordinate of cells
+        List[List]: The sorted coordinate of cells
     """
     sorted_cells = []
     cells = np.array(cells)
@@ -199,13 +215,13 @@ def sort_cell(cells, ths=5):
     return sorted_cells
 
 
-def predict_relation(cells: list):
+def predict_relation(cells: List[List]) -> Tuple[List, List]:
     """This is a function which extract relationship value between cells.
 
     Args:
-        cells (list): The sorted coordinate of cells
+        cells (List[List]): The sorted coordinate of cells
     Returns:
-        (list, list): two list contain id couples corrsponding to relationship value
+        Tuple[List, List]: two list contain id couples corrsponding to relationship value
     """
 
     hor_couple_ids = []

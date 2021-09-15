@@ -1,5 +1,18 @@
 from typing import Tuple
 
+"""
+The constructor of objects of class Element, this function takes 4 integer
+values ​​defined as x_min, x_max, y_min, y_max respectively.
+These values ​​are used to determine 2 points: top-left point (x_min, y_min) and
+bottom-right point (x_max, y_max)
+For example:
+        (x_min, y_min)──────┐
+            │               │
+            │               │
+            │               │
+            └─────────(x_max, y_max)
+"""
+
 
 class Element:
     def __init__(self, coordinate: Tuple[int, int, int, int]):
@@ -7,16 +20,13 @@ class Element:
         values ​​defined as x_min, x_max, y_min, y_max respectively.
         These values ​​are used to determine 2 points: top-left point (x_min, y_min) and
         bottom-right point (x_max, y_max)
-        For example:
-                (x_min, y_min)──────────────────────────────┐
-                    │                                       │
-                    │                                       │
-                    │                                       │
-                    └─────────────────────────────────(x_max, y_max)
 
         Args:
-            coordinate (List[int, int, int, int]): A list that contains 4 integer values
-                ​​defined as x_min, x_max, y_min, y_max respectively
+            coordinate (List[int, int, int, int]): A list that contains 4 integer
+            values ​​defined as x_min, x_max, y_min, y_max respectively
+
+        Returns:
+            bool: The return value. True for success, False otherwise.
         """
         self.coordinate = coordinate
 

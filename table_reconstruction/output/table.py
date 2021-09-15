@@ -5,6 +5,8 @@ from .element import Element
 
 
 class Table(Element):
+    """ """
+
     def __init__(
         self,
         coordinate: Tuple[int, int, int, int],
