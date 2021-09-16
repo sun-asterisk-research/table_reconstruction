@@ -140,3 +140,10 @@ cython_debug/
 # Editor config folder
 .vscode/
 .idea/
+
+*.rst
+!index.rst
+
+table_reconstruction/__version__.py
+
+docs/source/_build

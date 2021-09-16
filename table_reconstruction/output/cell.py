@@ -4,6 +4,8 @@ from .element import Element
 
 
 class Cell(Element):
+    """ """
+
     def __init__(
         self,
         coordinate: Tuple[int, int, int, int],
@@ -16,17 +18,7 @@ class Cell(Element):
         number, row number, table coordinates and information of cells defined within it
         To handle the cases where cells are merged together, the cells to be extracted
         are defined as connected regions surrounded by straight lines.
-        For example, in the following table, cell has been marked (*) has col index is 1
-        and row index is 1. It spans 1 unit in rows and 2 units in columns
-        ┌──────────────────────────┬─────────────────────────────────┬────────────────┐
-        │     This is a cell       │         This is a cell          │ This is a cell │
-        ├──────────────────────────┼─────────────────────────────────┼────────────────┤
-        │     This is a cell       │                                 │ This is a cell │
-        ├──────────────────────────┤         This is a cell *        ├────────────────┤
-        │                          │                                 │ This is a cell │
-        │     This is a cell       ├─────────────────────────────────┼────────────────┤
-        │                          │         This is a cell          │ This is a cell │
-        └──────────────────────────┴─────────────────────────────────┴────────────────┘
+
         Args:
             coordinate (List[int, int, int, int]): A list that contains 4 integer values
                 ​​defined as x_min, x_max, y_min, y_max respectively
