@@ -260,7 +260,7 @@ def get_coordinates(mask, ths=5, kernel_len=10):
         ths (int, optional): Threshold value to ignore the lines
         has not same y coordinate for horizontal lines or x coordinate
         for vertical lines. Defaults to 5.
-        kernel_len (int, optional): The size of kernel is applied in method cv2.getStructuringElement.
+        kernel_len (int, optional): The size of kernel is applied.
 
     Returns:
         tuple: Tuple contain the coordinate of table, vertical and horizontal lines.
@@ -319,7 +319,8 @@ def normalize_v1(lines, axis, ths=10):
     Args:
         lines (list): The coordinate of horizontal lines or vertical lines.
         axis (int): If 0, lines is horizontal lines, otherwise vertical lines.
-        ths (int, optional): Threshold value to group the lines has same x or y coordinate.
+        ths (int, optional): Threshold value to group the lines
+        has same x or y coordinate.
 
     Returns:
         list: The normalized coordinate of lines.
