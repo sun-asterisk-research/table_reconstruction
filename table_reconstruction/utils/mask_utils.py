@@ -1,8 +1,8 @@
 import numpy as np
 import cv2
 
-def normalize(img, mask_img):
 
+def normalize(img, mask_img):
     """Convert shape of mask image to shape of input image
 
     Args:
@@ -21,6 +21,7 @@ def normalize(img, mask_img):
 
     return mask
 
+
 def get_horizontal_lines_mask(mask, kernel_len):
 
     """Get binary image which contain only horizontal lines
@@ -37,6 +38,7 @@ def get_horizontal_lines_mask(mask, kernel_len):
     horizontal_lines_mask = cv2.dilate(image_horizontal, hor_kernel, iterations=3)
 
     return horizontal_lines_mask
+
 
 def get_vertical_lines_mask(mask, kernel_len):
 

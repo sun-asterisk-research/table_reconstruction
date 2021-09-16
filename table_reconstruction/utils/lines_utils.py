@@ -14,18 +14,19 @@ def get_table_line(binimg:np.array, axis=0,lineW=5):
         lineW (int, optional): The minimum line width. Defaults to 5.
 
     Returns:
-        [list]: The coordinate of extracted line.
+        list: The coordinate of extracted line.
     """
     labels = measure.label(binimg > 0, connectivity = 2)
     regions = measure.regionprops(labels)
 
     if axis == 1:
-        lineboxes = [minAreaRect(line.coords) for line in regions if line.bbox[2] - line.bbox[0] > lineW ]
+        lineboxes = [minAreaRect(line.coords) for line in regions if line.bbox[2] - line.bbox[0] > lineW]
     else:
-        lineboxes = [minAreaRect(line.coords) for line in regions if line.bbox[3] - line.bbox[1] > lineW ]
+        lineboxes = [minAreaRect(line.coords) for line in regions if line.bbox[3] - line.bbox[1] > lineW]
 
 
     return lineboxes
+
 
 def minAreaRect(coords):
     """Get coordinate of line
@@ -58,6 +59,7 @@ def minAreaRect(coords):
 
     return [xmin, ymin, xmax, ymax]
 
+
 def solve(box):
     """Caculate angle, width, height, the center coordinate of box
 
@@ -77,6 +79,7 @@ def solve(box):
     angle = np.arcsin(sinA)
 
     return angle, w, h, cx, cy
+
 
 def _order_points(pts):
     """Extract top left. top right, bottom left, bottom right of region
@@ -98,6 +101,7 @@ def _order_points(pts):
     (br, tr) = right_most[np.argsort(distance)[::-1], :]
 
     return np.array([tl, tr, br, bl], dtype="float32")
+
 
 def image_location_sort_box(box):
     """Sort and extract the coordinate of points
@@ -147,6 +151,7 @@ def get_lines_coordinate(line_mask:np.array, axis:int, ths=30):
 
     return np.array(lines_coordinate)
 
+
 def get_table_coordinate(hor_lines_coord:list, ver_lines_coord:list):
     """Extract the coordinate of table in image
 
@@ -166,6 +171,7 @@ def get_table_coordinate(hor_lines_coord:list, ver_lines_coord:list):
     tab_y2 = max(max(hor_lines_coord[:, 3]), max(ver_lines_coord[:, 3]))
 
     return tab_x1, tab_y1, tab_x2, tab_y2
+
 
 def remove_noise(hor_lines_coord:list, ver_lines_coord:list, ths=15, noise_edge_ths=0.5):
     """Remove noise edge from image
@@ -447,6 +453,7 @@ def normalize_v2(ver_lines_coord:list, hor_lines_coord:list):
         ver_lines_coord[i, 3] = update_coord
 
     return hor_lines_coord, ver_lines_coord
+
 
 def is_line(line:list, lines:list, axis:int, thresh:int):
     """This is a function to check whether the coordinate is the coordinate of an existing line or not.

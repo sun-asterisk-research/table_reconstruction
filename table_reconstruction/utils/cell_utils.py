@@ -2,6 +2,7 @@ from shapely.geometry import LineString
 from table_reconstruction.utils.lines_utils import is_line
 import numpy as np
 
+
 def get_intersection_points(horizontal_lines, vertical_lines, tab_coord):
     """This a function which find the coordinate (x, y) of intersection points
 
@@ -60,7 +61,8 @@ def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:
         thresh (float): The threshold value to group line which has same x, y coordinate
 
     Returns:
-        bool: This method returns True if the coordinate is the coordinate of an existing cell, otherwise returns False
+        bool: This method returns True if the coordinate is the coordinate of an existing cell,
+        otherwise returns False
     """
     x1, y1, x2, y2 = cell_coord
     h_lines, v_lines = lines[0][0]
@@ -83,13 +85,16 @@ def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:
 
     return True
 
+
 def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple:
-    """This is a function which find the coordinates of bottom right point of a cell by coordinate of top left point
+    """This is a function which find the coordinates of bottom right point of
+    a cell by coordinate of top left point
 
     Args:
         pred_point (tuple): The top left point has form (x, y)
         points (list): The list of intersection points has form [[x, y]]
-        ths (int, optional): The threshold value to find the coordinate of point on y-axis which is nearest to top left point. Defaults to 5.
+        ths (int, optional): The threshold value to find the coordinate of point on y-axis
+        which is nearest to top left point. Defaults to 5.
 
     Returns:
         tuple: The coordinate of bottom right point has form [x, y]
@@ -113,11 +118,13 @@ def calculate_cell_coordinate(points: list, fake_flag: bool, thresh: int, *lines
     """This is a function which find the coordinate of cells in table
 
     Args:
-        points (list): The list of the coordinate of intersection points has form [(x_min, y_min, x_max, y_max)]
-        fake_flag (bool): if True, this method extract fake the coordinate of points, otherwise find the real coordinate of points
-        thresh (int): The threshold value to find the coordinate of point on y-axis which is nearest to top left point. Defaults to 5.
+        points (list): The list of the coordinate of intersection points
+        fake_flag (bool): if True, this method extract fake the coordinate of points,
+        otherwise find the real coordinate of points
+        thresh (int): The threshold value to find the coordinate of point o
+        n y-axis which is nearest to top left point. Defaults to 5.
     Returns:
-        [List]: The coordinate of cells.
+        list: The coordinate of cells.
     """
     cells = []
     list_x_coords = np.array(points[:, 0])
