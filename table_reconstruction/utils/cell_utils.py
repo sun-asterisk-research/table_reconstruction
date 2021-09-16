@@ -67,19 +67,19 @@ def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:
     x1, y1, x2, y2 = cell_coord
     h_lines, v_lines = lines[0][0]
 
-    left_status = is_line([x1, y1, x1, y2], v_lines, axis=1, thresh=thresh)
+    left_status = is_line([x1, y1, x1, y2], v_lines, axis=1, ths=thresh)
     if left_status is False:
         return False
 
-    right_status = is_line([x2, y1, x2, y2], v_lines, axis=1, thresh=thresh)
+    right_status = is_line([x2, y1, x2, y2], v_lines, axis=1, ths=thresh)
     if right_status is False:
         return False
 
-    top_status = is_line([x1, y1, x2, y1], h_lines, axis=0, thresh=thresh)
+    top_status = is_line([x1, y1, x2, y1], h_lines, axis=0, ths=thresh)
     if top_status is False:
         return False
 
-    bottom_status = is_line([x1, y2, x2, y2], h_lines, axis=0, thresh=thresh)
+    bottom_status = is_line([x1, y2, x2, y2], h_lines, axis=0, ths=thresh)
     if bottom_status is False:
         return False
 
