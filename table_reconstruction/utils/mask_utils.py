@@ -22,7 +22,7 @@ def normalize(img, mask_img):
     return mask
 
 
-def get_horizontal_lines_mask(mask, kernel_len):
+def get_hor_lines_mask(mask, kernel_len):
 
     """Get binary image which contain only horizontal lines
 
@@ -40,7 +40,7 @@ def get_horizontal_lines_mask(mask, kernel_len):
     return horizontal_lines_mask
 
 
-def get_vertical_lines_mask(mask, kernel_len):
+def get_ver_lines_mask(mask, kernel_len):
 
     """Get binary image which contain only vertical lines
 

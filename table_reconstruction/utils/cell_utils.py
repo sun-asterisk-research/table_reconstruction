@@ -114,14 +114,14 @@ def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple:
         return (bottom_right_vertices[0], bottom_right_vertices[1])
 
 
-def calculate_cell_coordinate(points, fake_flag, thresh, *lines):
+def calculate_cell_coordinate(points, fake_flag, ths, *lines):
     """This is a function which find the coordinate of cells in table
 
     Args:
         points (list): The list of the coordinate of intersection points
         fake_flag (bool): if True, this method extract fake the coordinate of points,
         otherwise find the real coordinate of points
-        thresh (int): The threshold value to find the coordinate of point o
+        ths (int): The threshold value to find the coordinate of point o
         n y-axis which is nearest to top left point. Defaults to 5.
     Returns:
         list: The coordinate of cells.
@@ -134,11 +134,11 @@ def calculate_cell_coordinate(points, fake_flag, thresh, *lines):
         x1, y1 = point
 
         # define the nearest right and bottom vertices
-        y_coord_mask = (x_coords > x1 - thresh) & (x_coords < x1 + thresh) & (y_coords > y1)
+        y_coord_mask = (x_coords > x1 - ths) & (x_coords < x1 + ths) & (y_coords > y1)
         filter_y_coords = sorted(y_coords[y_coord_mask])
 
         # define the nearest right and bottom vertices
-        x_coord_mask = (y_coords > y1 - thresh) & (y_coords < y1 + thresh) & (x_coords > x1)
+        x_coord_mask = (y_coords > y1 - ths) & (y_coords < y1 + ths) & (x_coords > x1)
         filter_x_coords = sorted(x_coords[x_coord_mask])
 
         if len(filter_y_coords) > 0 and len(filter_x_coords) > 0:
@@ -146,13 +146,13 @@ def calculate_cell_coordinate(points, fake_flag, thresh, *lines):
             for pred_x2 in filter_x_coords:
                 for pred_y2 in filter_y_coords:
                     point = (pred_x2, pred_y2)
-                    x2, y2 = get_bottom_right_corner(point, points.copy(), thresh)
+                    x2, y2 = get_bottom_right_corner(point, points.copy(), ths)
                     if x2 and y2:
                         if fake_flag:
                             status = 1
                             break
                         else:
-                            if is_cell_existed([x1, y1, x2, y2], thresh, lines):
+                            if is_cell_existed([x1, y1, x2, y2], ths, lines):
                                 status = 1
                                 break
                 if status == 1:

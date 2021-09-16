@@ -103,7 +103,6 @@ class DirectedGraph(object):
 
 
 def convertId2DocxCoord(cell_id, nb_col):
-
     """Find the XY coordinate of a know point
 
     Args:
@@ -119,8 +118,8 @@ def convertId2DocxCoord(cell_id, nb_col):
 
     return x, y
 
-def convertSpanCell2DocxCoord(cells, fake_cells, span_cell_ids, nb_col, thresh=5):
 
+def convertSpanCell2DocxCoord(cells, fake_cells, span_cell_ids, nb_col, thresh=5):
     """Find the XY coordinate of span cells
 
     Args:

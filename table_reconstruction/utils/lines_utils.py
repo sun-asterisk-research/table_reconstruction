@@ -1,7 +1,7 @@
 from skimage import measure
 from scipy.spatial import distance as dist
 import numpy as np
-from table_reconstruction.utils.mask_utils import get_horizontal_lines_mask, get_vertical_lines_mask
+from table_reconstruction.utils import mask_utils
 import cv2
 
 
@@ -38,7 +38,7 @@ def minAreaRect(coords):
     Returns:
         list: The coordinate of line
     """
-    rect = cv2.minAreaRect(coords[:,::-1])
+    rect = cv2.minAreaRect(coords[:, ::-1])
     box = cv2.boxPoints(rect)
     box = box.reshape((8,)).tolist()
 
@@ -114,9 +114,9 @@ def image_location_sort_box(box):
         list: the sorted coordinate of region
     """
     x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
-    pts = (x1, y1),(x2, y2),(x3, y3),(x4, y4)
+    pts = (x1, y1), (x2, y2), (x3, y3), (x4, y4)
     pts = np.array(pts, dtype="float32")
-    (x1, y1),(x2, y2),(x3, y3),(x4, y4) = _order_points(pts)
+    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = _order_points(pts)
 
     return [x1, y1, x2, y2, x3, y3, x4, y4]
 
@@ -260,10 +260,10 @@ def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
     """
 
     # get horizontal lines mask image
-    horizontal_lines_mask = get_horizontal_lines_mask(mask, kernel_len)
+    horizontal_lines_mask = mask_utils.get_hor_lines_mask(mask, kernel_len)
 
     # get vertical lines mask image
-    vertical_lines_mask = get_vertical_lines_mask(mask, kernel_len)
+    vertical_lines_mask = mask_utils.get_ver_lines_mask(mask, kernel_len)
 
     # get coordinate of horizontal and vertical lines
     hor_lines_coord = get_lines_coordinate(horizontal_lines_mask, axis=0, ths=thresh)
@@ -457,21 +457,22 @@ def normalize_v2(ver_lines_coord, hor_lines_coord):
 
 
 def is_line(line, lines, axis, thresh):
-    """This is a function to check whether the coordinate is the coordinate of an existing line or not.
+    """Check whether the coordinate is the coordinate of an existing line or not.
 
     Args:
         line (list): The coordinate of line
         lines (list): The coordinate of lines
-        axis (int): If axis == 0 lines is the checking line is horizontal line, otherwise vertical lines.
+        axis (int): If axis == 0 lines is horizontal line, otherwise vertical lines.
         thresh (float): The threshold value to group line which has same x, y coordinate
 
     Returns:
-        bool: This method returns True if the coordinate is the coordinate of an existing line, otherwise returns False
+        bool: returns True if the coordinate is the coordinate of an existing line, otherwise returns False
     """
     x1, y1, x2, y2 = line
     lines = np.array(lines)
 
-    if axis == 0: # horizontal
+    # horizontal
+    if axis == 0:
         y1_coord_list = lines[:, 1]
         lines_mask = (y1_coord_list > y1 - thresh) & (y1_coord_list < y1 + thresh)
         sub_h_lines = lines[lines_mask]
@@ -481,7 +482,8 @@ def is_line(line, lines, axis, thresh):
 
             if line_x1 - thresh <= x1 < x2 <= line_x2 + thresh:
                 return True
-    elif axis == 1: # vertical
+    # vertical
+    elif axis == 1:
         x1_coord_list = lines[:, 0]
         lines_mask = (x1_coord_list > x1 - thresh) & (x1_coord_list < x1 + thresh)
         sub_v_lines = lines[lines_mask]
