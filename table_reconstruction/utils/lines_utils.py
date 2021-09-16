@@ -20,11 +20,15 @@ def get_table_line(binimg, axis, lineW=5):
     labels = measure.label(binimg > 0, connectivity=2)
     regions = measure.regionprops(labels)
 
+    lineboxes = []
     if axis == 1:
-        lineboxes = [minAreaRect(line.coords) for line in regions if line.bbox[2] - line.bbox[0] > lineW]
+        for line in regions:
+            if line.bbox[2] - line.bbox[0] > lineW:
+                lineboxes.append(minAreaRect(line.coords))
     else:
-        lineboxes = [minAreaRect(line.coords) for line in regions if line.bbox[3] - line.bbox[1] > lineW]
-
+        for line in regions:
+            if line.bbox[3] - line.bbox[1] > lineW:
+                lineboxes.append(minAreaRect(line.coords))
 
     return lineboxes
 
@@ -71,8 +75,8 @@ def solve(box):
         tuple: (angle, width, height, center x, center y)
     """
     x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
-    cx = (x1 + x3 + x2 + x4)/4.0
-    cy = (y1 + y3 + y4 + y2)/4.0
+    cx = (x1 + x3 + x2 + x4) / 4.0
+    cy = (y1 + y3 + y4 + y2) / 4.0
     w = (np.sqrt((x2 - x1)**2 + (y2 - y1)**2) + np.sqrt((x3 - x4)**2 + (y3 - y4)**2))/2
     h = (np.sqrt((x2 - x3)**2 + (y2 - y3)**2) + np.sqrt((x1 - x4)**2 + (y1 - y4)**2))/2
 
@@ -126,11 +130,12 @@ def get_lines_coordinate(line_mask, axis, ths=30):
 
     Args:
         line_mask (np.array): the line binary image
-        axis (int): if axis=0, line_mask is horizontal lines binary image, otherwise line_mask is vertical lines binary image.
-        ths (int, optional): The threshold value to ignore noise edge. Defaults to 30.
+        axis (int): if axis=0, line_mask is horizontal lines binary image,
+        otherwise line_mask is vertical lines binary image.
+        ths (int, optional): The threshold value to ignore noise edge.
 
     Returns:
-        [list]: the coordinate of lines.
+        list: the coordinate of lines.
     """
 
     boxes = get_table_line(line_mask, axis=axis, lineW=ths)
@@ -174,27 +179,27 @@ def get_table_coordinate(hor_lines_coord, ver_lines_coord):
     return tab_x1, tab_y1, tab_x2, tab_y2
 
 
-def remove_noise(hor_lines_coord, ver_lines_coord, ths=15, noise_edge_ths=0.5):
+def remove_noise(hor_lines, ver_lines, ths=15, noise_edge_ths=0.5):
     """Remove noise edge from image
 
     Args:
-        hor_lines_coord (list): The coordinate of horizontal lines
-        ver_lines_coord (list): The coordinate of vertical lines
+        hor_lines (list): The coordinate of horizontal lines
+        ver_lines (list): The coordinate of vertical lines
         ths (int, optional): The threshold value to group lines which has same coordinate.
         noise_edge_ths (float, optional): The threshold value to check whether the line is noise edge or not.
 
     Returns:
         tuple: The coordinate of horizontal and vertical lines.
     """
-    hor_mask = np.array([True] * len(hor_lines_coord))
-    ver_mask = np.array([True] * len(ver_lines_coord))
-    hor_x1 = hor_lines_coord[:, 0]
-    hor_x2 = hor_lines_coord[:, 2]
-    hor_y = hor_lines_coord[:, 1]
+    hor_mask = np.array([True] * len(hor_lines))
+    ver_mask = np.array([True] * len(ver_lines))
+    hor_x1 = hor_lines[:, 0]
+    hor_x2 = hor_lines[:, 2]
+    hor_y = hor_lines[:, 1]
 
-    ver_x = ver_lines_coord[:, 0]
-    ver_y1 = ver_lines_coord[:, 1]
-    ver_y2 = ver_lines_coord[:, 3]
+    ver_x = ver_lines[:, 0]
+    ver_y1 = ver_lines[:, 1]
+    ver_y2 = ver_lines[:, 3]
 
     max_hor_length = max(hor_x2 - hor_x1)
     max_ver_length = max(ver_y2 - ver_y1)
@@ -233,17 +238,17 @@ def remove_noise(hor_lines_coord, ver_lines_coord, ths=15, noise_edge_ths=0.5):
 
     for i, stat in enumerate(hor_mask):
         if not stat:
-            x1, _, x2, _ = hor_lines_coord[i]
+            x1, _, x2, _ = hor_lines[i]
             if (x2 - x1) / max_hor_length > noise_edge_ths:
                 hor_mask[i] = True
 
     for i, stat in enumerate(ver_mask):
         if stat is False:
-            _, y1, _, y2, _ = ver_lines_coord[i]
+            _, y1, _, y2, _ = ver_lines[i]
             if (y2 - y1) / max_ver_length > noise_edge_ths:
                 ver_mask[i] = True
 
-    return hor_lines_coord[hor_mask], ver_lines_coord[ver_mask]
+    return hor_lines[hor_mask], ver_lines[ver_mask]
 
 
 def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
@@ -274,7 +279,6 @@ def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
 
     # get coordinate of table
     tab_x1, tab_y1, tab_x2, tab_y2 = get_table_coordinate(hor_lines_coord, ver_lines_coord)
-
 
     # preserve sure that all table has 4 borders
     new_ver_lines_coord = []

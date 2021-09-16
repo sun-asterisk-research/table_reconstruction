@@ -175,7 +175,7 @@ def sort_cell(cells, ths=5):
 
     Args:
         cells (list): The coordinate of cells.
-        ths (int, optional): The threshold value to group cells which has same y coordinate.
+        ths (int, optional): The threshold value to group cells has same y coordinate.
 
     Returns:
         list: The sorted coordinate of cells
