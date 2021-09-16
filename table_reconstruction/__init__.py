@@ -5,6 +5,7 @@ from PIL.Image import Image
 from pkg_resources import DistributionNotFound, get_distribution
 
 from .output.table import Table
+from .line_segmentation.line_segment import LineSegmentation    # noqa: F401
 
 __version__ = None
 try:
