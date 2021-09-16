@@ -80,7 +80,7 @@ def solve(box):
     w = (np.sqrt((x2 - x1)**2 + (y2 - y1)**2) + np.sqrt((x3 - x4)**2 + (y3 - y4)**2))/2
     h = (np.sqrt((x2 - x3)**2 + (y2 - y3)**2) + np.sqrt((x1 - x4)**2 + (y1 - y4)**2))/2
 
-    sinA = (h * (x1 - cx) -w * (y1 - cy)) * 1.0/(h * h + w * w) * 2
+    sinA = (h * (x1 - cx) - w * (y1 - cy)) * 1.0 / (h * h + w * w) * 2
     angle = np.arcsin(sinA)
 
     return angle, w, h, cx, cy
@@ -185,8 +185,9 @@ def remove_noise(hor_lines, ver_lines, ths=15, noise_edge_ths=0.5):
     Args:
         hor_lines (list): The coordinate of horizontal lines
         ver_lines (list): The coordinate of vertical lines
-        ths (int, optional): The threshold value to group lines which has same coordinate.
-        noise_edge_ths (float, optional): The threshold value to check whether the line is noise edge or not.
+        ths (int, optional): Threshold value to group lines which has same coordinate.
+        noise_edge_ths (float, optional): Threshold value check whether
+        the line is noise edge or not.
 
     Returns:
         tuple: The coordinate of horizontal and vertical lines.
@@ -251,7 +252,7 @@ def remove_noise(hor_lines, ver_lines, ths=15, noise_edge_ths=0.5):
     return hor_lines[hor_mask], ver_lines[ver_mask]
 
 
-def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
+def get_coordinates(mask, thresh=5, kernel_len=10):
     """This function extract the coordinate of table, the coordinate of horizontal and vertical lines.
 
     Args:
