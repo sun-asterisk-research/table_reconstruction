@@ -61,7 +61,7 @@ def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:
         thresh (float): The threshold value to group line which has same x, y coordinate
 
     Returns:
-        bool: This method returns True if the coordinate is the coordinate of an existing cell,
+        bool: returns True if the coordinate is the coordinate of an existing cell,
         otherwise returns False
     """
     x1, y1, x2, y2 = cell_coord
@@ -93,8 +93,8 @@ def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple:
     Args:
         pred_point (tuple): The top left point has form (x, y)
         points (list): The list of intersection points has form [[x, y]]
-        ths (int, optional): The threshold value to find the coordinate of point on y-axis
-        which is nearest to top left point. Defaults to 5.
+        ths (int, optional): The threshold to find the coordinate of point
+        on y-axis which is nearest to top left point. Defaults to 5.
 
     Returns:
         tuple: The coordinate of bottom right point has form [x, y]
@@ -114,7 +114,7 @@ def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple:
         return (bottom_right_vertices[0], bottom_right_vertices[1])
 
 
-def calculate_cell_coordinate(points: list, fake_flag: bool, thresh: int, *lines) -> list:
+def calculate_cell_coordinate(points, fake_flag, thresh, *lines):
     """This is a function which find the coordinate of cells in table
 
     Args:
@@ -127,25 +127,26 @@ def calculate_cell_coordinate(points: list, fake_flag: bool, thresh: int, *lines
         list: The coordinate of cells.
     """
     cells = []
-    list_x_coords = np.array(points[:, 0])
-    list_y_coords = np.array(points[:, 1])
+    x_coords = np.array(points[:, 0])
+    y_coords = np.array(points[:, 1])
 
     for point in points:
         x1, y1 = point
 
         # define the nearest right and bottom vertices
-        y_coord_mask = (list_x_coords > x1 - thresh) & (list_x_coords < x1 + thresh) & (list_y_coords > y1)
-        filter_y_coords = sorted(list_y_coords[y_coord_mask])
+        y_coord_mask = (x_coords > x1 - thresh) & (x_coords < x1 + thresh) & (y_coords > y1)
+        filter_y_coords = sorted(y_coords[y_coord_mask])
 
         # define the nearest right and bottom vertices
-        x_coord_mask = (list_y_coords > y1 - thresh) & (list_y_coords < y1 + thresh) & (list_x_coords > x1)
-        filter_x_coords = sorted(list_x_coords[x_coord_mask])
+        x_coord_mask = (y_coords > y1 - thresh) & (y_coords < y1 + thresh) & (x_coords > x1)
+        filter_x_coords = sorted(x_coords[x_coord_mask])
 
         if len(filter_y_coords) > 0 and len(filter_x_coords) > 0:
             status = 0
             for pred_x2 in filter_x_coords:
                 for pred_y2 in filter_y_coords:
-                    x2, y2 = get_bottom_right_corner((pred_x2, pred_y2), points.copy(), thresh)
+                    point = (pred_x2, pred_y2)
+                    x2, y2 = get_bottom_right_corner(point, points.copy(), thresh)
                     if x2 and y2:
                         if fake_flag:
                             status = 1
@@ -169,12 +170,12 @@ def calculate_cell_coordinate(points: list, fake_flag: bool, thresh: int, *lines
     return cells
 
 
-def sort_cell(cells: list, ths=5) -> list:
+def sort_cell(cells, ths=5):
     """Sort cells from left to right and top to bottom
 
     Args:
         cells (list): The coordinate of cells.
-        ths (int, optional): The threshold value to group cells which has same y coordinate. Defaults to 5.
+        ths (int, optional): The threshold value to group cells which has same y coordinate.
 
     Returns:
         list: The sorted coordinate of cells
@@ -223,8 +224,9 @@ def predict_relation(cells: list):
                 continue
             x1_b, x2_b, _, _ = cells[id_b]
             sorted_x = sorted([x1_a, x2_a, x1_b, x2_b])
-            if abs(sorted_x[1] - sorted_x[2]) != 0 and (sorted_x[1] >= x1_a) and (sorted_x[2] <= x2_a):
-                ver_couple_ids.append([id_a, id_b])
+            if abs(sorted_x[1] - sorted_x[2]) != 0:
+                if (sorted_x[1] >= x1_a) and (sorted_x[2] <= x2_a):
+                    ver_couple_ids.append([id_a, id_b])
 
         # horizontal
         for id_b in ids[list_x1_coords == x2_a]:
@@ -233,7 +235,8 @@ def predict_relation(cells: list):
             _, _, y1_b, y2_b = cells[id_b]
 
             sorted_y = sorted([y1_a, y2_a, y1_b, y2_b])
-            if abs(sorted_y[1] - sorted_y[2]) != 0 and (sorted_y[1] >= y1_a) and (sorted_y[2] <= y2_a):
-                hor_couple_ids.append([id_a, id_b])
+            if abs(sorted_y[1] - sorted_y[2]) != 0:
+                if (sorted_y[1] >= y1_a) and (sorted_y[2] <= y2_a):
+                    hor_couple_ids.append([id_a, id_b])
 
     return hor_couple_ids, ver_couple_ids

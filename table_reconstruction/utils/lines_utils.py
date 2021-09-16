@@ -5,18 +5,19 @@ from table_reconstruction.utils.mask_utils import get_horizontal_lines_mask, get
 import cv2
 
 
-def get_table_line(binimg:np.array, axis=0,lineW=5):
+def get_table_line(binimg, axis, lineW=5):
     """Extract the coordinate of lines from table binary image
 
     Args:
         binimg (np.array): Table binary image
-        axis (int, optional): if 0, extracted line is horizontal lines, otherwise extracted line is vertical lines. Defaults to 0.
+        axis (int, optional): if 0, extracted line is horizontal lines,
+        otherwise extracted line is vertical lines.
         lineW (int, optional): The minimum line width. Defaults to 5.
 
     Returns:
         list: The coordinate of extracted line.
     """
-    labels = measure.label(binimg > 0, connectivity = 2)
+    labels = measure.label(binimg > 0, connectivity=2)
     regions = measure.regionprops(labels)
 
     if axis == 1:
@@ -35,9 +36,9 @@ def minAreaRect(coords):
         coords (ndarray): Coordinate list (row, col) of the region. has shape (N, 2)
 
     Returns:
-        [list]: The coordinate of line
+        list: The coordinate of line
     """
-    rect= cv2.minAreaRect(coords[:,::-1])
+    rect = cv2.minAreaRect(coords[:,::-1])
     box = cv2.boxPoints(rect)
     box = box.reshape((8,)).tolist()
 
@@ -69,7 +70,7 @@ def solve(box):
     Returns:
         tuple: (angle, width, height, center x, center y)
     """
-    x1, y1, x2, y2, x3, y3, x4, y4= box[:8]
+    x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
     cx = (x1 + x3 + x2 + x4)/4.0
     cy = (y1 + y3 + y4 + y2)/4.0
     w = (np.sqrt((x2 - x1)**2 + (y2 - y1)**2) + np.sqrt((x3 - x4)**2 + (y3 - y4)**2))/2
@@ -110,7 +111,7 @@ def image_location_sort_box(box):
         box (list): the coordinate of region
 
     Returns:
-        [list]: the sorted coordinate of region
+        list: the sorted coordinate of region
     """
     x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
     pts = (x1, y1),(x2, y2),(x3, y3),(x4, y4)
@@ -120,7 +121,7 @@ def image_location_sort_box(box):
     return [x1, y1, x2, y2, x3, y3, x4, y4]
 
 
-def get_lines_coordinate(line_mask:np.array, axis:int, ths=30):
+def get_lines_coordinate(line_mask, axis, ths=30):
     """Extract coordinate of line from  binary image
 
     Args:
@@ -152,7 +153,7 @@ def get_lines_coordinate(line_mask:np.array, axis:int, ths=30):
     return np.array(lines_coordinate)
 
 
-def get_table_coordinate(hor_lines_coord:list, ver_lines_coord:list):
+def get_table_coordinate(hor_lines_coord, ver_lines_coord):
     """Extract the coordinate of table in image
 
     Args:
@@ -160,7 +161,7 @@ def get_table_coordinate(hor_lines_coord:list, ver_lines_coord:list):
         ver_lines_coord (list): The coordinate of vertical lines
 
     Returns:
-        [list]: The coordinat of table has form (xmin, ymin, xmax, ymax)
+        list: The coordinat of table has form (xmin, ymin, xmax, ymax)
     """
     hor_lines_coord = np.array(hor_lines_coord)
     ver_lines_coord = np.array(ver_lines_coord)
@@ -173,17 +174,17 @@ def get_table_coordinate(hor_lines_coord:list, ver_lines_coord:list):
     return tab_x1, tab_y1, tab_x2, tab_y2
 
 
-def remove_noise(hor_lines_coord:list, ver_lines_coord:list, ths=15, noise_edge_ths=0.5):
+def remove_noise(hor_lines_coord, ver_lines_coord, ths=15, noise_edge_ths=0.5):
     """Remove noise edge from image
 
     Args:
         hor_lines_coord (list): The coordinate of horizontal lines
         ver_lines_coord (list): The coordinate of vertical lines
-        ths (int, optional): The threshold value to group lines which has same coordinate. Defaults to 15.
-        noise_edge_ths (float, optional): The threshold value to check whether the line is noise edge or not. Defaults to 0.5.
+        ths (int, optional): The threshold value to group lines which has same coordinate.
+        noise_edge_ths (float, optional): The threshold value to check whether the line is noise edge or not.
 
     Returns:
-        [tuple]: The coordinate of horizontal and vertical lines.
+        tuple: The coordinate of horizontal and vertical lines.
     """
     hor_mask = np.array([True] * len(hor_lines_coord))
     ver_mask = np.array([True] * len(ver_lines_coord))
@@ -250,12 +251,12 @@ def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
 
     Args:
         mask (np.darray): A binary table image
-        thresh (int, optional): Threshold value to ignore the lines which has not same y coordinate for horizontal lines or x coordinate 
-                                for vertical lines. Defaults to 5.
-        kernel_len (int, optional): The size of kernel is applied in method cv2.getStructuringElement. Defaults to 10.
+        thresh (int, optional): Threshold value to ignore the lines which has not same y coordinate
+        for horizontal lines or x coordinate for vertical lines. Defaults to 5.
+        kernel_len (int, optional): The size of kernel is applied in method cv2.getStructuringElement.
 
     Returns:
-        [tuple]: Tuple contain the coordinate of table, the coordinate of vertical and horizontal lines.
+        tuple: Tuple contain the coordinate of table, the coordinate of vertical and horizontal lines.
     """
 
     # get horizontal lines mask image
@@ -306,13 +307,13 @@ def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
     return [tab_x1, tab_y1, tab_x2, tab_y2], new_ver_lines_coord, new_hor_lines_coord
 
 
-def normalize_v1(lines:list, axis:int, thresh=10):
+def normalize_v1(lines, axis, thresh=10):
     """Normalize the coordinate of vertical lines or horizontal lines
 
     Args:
         lines (list): The coordinate of horizontal lines or vertical lines.
-        axis ([type]): if 0, lines is horizontal lines, otherwise lines is vertical lines.
-        thresh (int, optional): The threshold value to group the lines which has same x or y coordinate. Defaults to 10.
+        axis (int): if 0, lines is horizontal lines, otherwise lines is vertical lines.
+        thresh (int, optional): The threshold value to group the lines which has same x or y coordinate.
 
     Returns:
         list: The normalized coordinate of lines.
@@ -378,7 +379,7 @@ def normalize_v1(lines:list, axis:int, thresh=10):
     return filter_lines
 
 
-def normalize_v2(ver_lines_coord:list, hor_lines_coord:list):
+def normalize_v2(ver_lines_coord, hor_lines_coord):
     """ Normalize the coordinate between vertical lines and horizontal lines
 
     Args:
@@ -455,7 +456,7 @@ def normalize_v2(ver_lines_coord:list, hor_lines_coord:list):
     return hor_lines_coord, ver_lines_coord
 
 
-def is_line(line:list, lines:list, axis:int, thresh:int):
+def is_line(line, lines, axis, thresh):
     """This is a function to check whether the coordinate is the coordinate of an existing line or not.
 
     Args:

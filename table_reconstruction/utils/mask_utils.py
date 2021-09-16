@@ -56,4 +56,3 @@ def get_vertical_lines_mask(mask, kernel_len):
     vertical_lines_mask = cv2.dilate(image_vertical, ver_kernel, iterations=3)
 
     return vertical_lines_mask
-
