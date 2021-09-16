@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 
 def normalize(img, mask_img):
+
     """Convert shape of mask image to shape of input image
 
     Args:
@@ -21,10 +22,11 @@ def normalize(img, mask_img):
     return mask
 
 def get_horizontal_lines_mask(mask, kernel_len):
+
     """Get binary image which contain only horizontal lines
 
     Args:
-        mask (np.ndarray): binary image of original image 
+        mask (np.ndarray): binary image of original image
         kernel_len (int): kernel size in cv2.getStructuringElement method
 
     Returns:
@@ -37,6 +39,7 @@ def get_horizontal_lines_mask(mask, kernel_len):
     return horizontal_lines_mask
 
 def get_vertical_lines_mask(mask, kernel_len):
+
     """Get binary image which contain only vertical lines
 
     Args:

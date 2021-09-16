@@ -25,11 +25,11 @@ class DirectedGraph(object):
         self.undirected_vertex[id_b].append(id_a)
 
         if self.check_span_cell(id_a):
-           self.span_cell_ids.append(id_a)
+            self.span_cell_ids.append(id_a)
 
         if self.check_span_cell(id_b):
-           self.span_cell_ids.append(id_b)
-        
+            self.span_cell_ids.append(id_b)
+
         if len(self.adj[id_a]) > 1 and id_a not in self.span_cell_ids:
             self.span_cell_ids.append(id_a)
 
@@ -42,7 +42,7 @@ class DirectedGraph(object):
         for couple_id in couple_ids:
             id_a, id_b = couple_id
             self.add_edge(id_a, id_b)
-        
+
         for span_cell_id in self.span_cell_ids:
             if len(self.adj[span_cell_id]) == 1:
                 self.span_cell_ids.append(self.adj[span_cell_id][0])
@@ -56,9 +56,10 @@ class DirectedGraph(object):
         Returns:
             Bool: if cell is span cell, return True, otherwise return False
         """
-        if (len(self.undirected_vertex[vertex_id]) > 2) and (vertex_id not in self.span_cell_ids):
-            return True
-        
+        if len(self.undirected_vertex[vertex_id]) > 2:
+            if vertex_id not in self.span_cell_ids:
+                return True
+
         return False
 
     def dfs(self, v, dp, vis):
@@ -76,32 +77,33 @@ class DirectedGraph(object):
             # if not visited:
             if not vis[self.adj[v][i]]:
                 self.dfs(self.adj[v][i], dp, vis)
-            
+
             # store the max of the paths
             dp[v] = max(dp[v], 1 + dp[self.adj[v][i]])
-    
-    def findLongestPath(self): 
+
+    def findLongestPath(self):
         """Function that returns the longest path in graph
 
         Returns:
             int: the maximum distance
         """
         # Dp array: dp[i] be the length of the longest path starting from the node i.
-        dp = [0] * self.nb_vertices  
-        
-        # Visited array to know if the node 
-        # has been visited previously or not 
+        dp = [0] * self.nb_vertices
+
+        # Visited array to know if the node
+        # has been visited previously or not
         vis = [False] * (self.nb_vertices)
-        
-        # Call DFS for every unvisited vertex 
-        for i in range(self.nb_vertices):  
-            if not vis[i] and len(self.adj[i]) > 0: 
-                self.dfs(i, dp, vis) 
-        
+
+        # Call DFS for every unvisited vertex
+        for i in range(self.nb_vertices):
+            if not vis[i] and len(self.adj[i]) > 0:
+                self.dfs(i, dp, vis)
+
         return max(dp) + 1
 
 
-def convertId2DocxCoord(cell_id, nb_row, nb_col):
+def convertId2DocxCoord(cell_id, nb_col):
+
     """Find the XY coordinate of a know point
 
     Args:
@@ -114,19 +116,19 @@ def convertId2DocxCoord(cell_id, nb_row, nb_col):
     """
     x = cell_id % nb_col
     y = cell_id // nb_col
-    
+
     return x, y
 
-def convertSpanCell2DocxCoord(cells, fake_cells, span_cell_ids, nb_row, nb_col, thresh=5):
+def convertSpanCell2DocxCoord(cells, fake_cells, span_cell_ids, nb_col, thresh=5):
+
     """Find the XY coordinate of span cells
 
     Args:
-        cells (list): the coordinate of cells has form [[x_min, x_max, y_min, y_max]]
-        fake_cells (list): the coordinate of fake cells has form [[x_min, x_max, y_min, y_max]]
+        cells (list): the coordinate of cells
+        fake_cells (list): the coordinate of fake cells
         span_cell_ids (list): the index of span cells
-        nb_row (int): number rows in table
         nb_col (int): number columns in table
-        thresh (int, optional): The threshold value to group the same x, y coordinate. Defaults to 5.
+        thresh (int, optional): threshold value to group the same x, y coordinate.
 
     Returns:
         list: the XY coordinate of span cells
@@ -144,21 +146,21 @@ def convertSpanCell2DocxCoord(cells, fake_cells, span_cell_ids, nb_row, nb_col, 
 
         x_mask = (x1 - thresh <= fake_x1_coords) & (fake_x2_coords <= x2 + thresh)
         y_mask = (y1 - thresh <= fake_y1_coords) & (fake_y2_coords <= y2 + thresh)
-        coord_mask = x_mask & y_mask 
+        coord_mask = x_mask & y_mask
 
         filter_ids = id_range[coord_mask]
         x_start_idx = 10000
         x_end_idx = -1
         y_start_idx = 10000
         y_end_idx = -1
- 
+
         for cell_id in filter_ids:
-            x, y = convertId2DocxCoord(cell_id, nb_row, nb_col)
+            x, y = convertId2DocxCoord(cell_id, nb_col)
             x_start_idx = min(x_start_idx, x)
             x_end_idx = max(x_end_idx, x)
             y_start_idx = min(y_start_idx, y)
             y_end_idx = max(y_end_idx, y)
-        
+
         if x_end_idx == x_start_idx and y_start_idx == y_end_idx:
             continue
 
@@ -166,5 +168,5 @@ def convertSpanCell2DocxCoord(cells, fake_cells, span_cell_ids, nb_row, nb_col, 
         docx_coor['x'] = [x_start_idx, x_end_idx]
         docx_coor['y'] = [y_start_idx, y_end_idx]
         docx_coords.append(docx_coor)
-    
+
     return docx_coords

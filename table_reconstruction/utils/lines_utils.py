@@ -41,7 +41,7 @@ def minAreaRect(coords):
     box = box.reshape((8,)).tolist()
 
     box = image_location_sort_box(box)
-    
+
     x1, y1, x2, y2, x3, y3, x4, y4 = box
     _, w, h, _, _ = solve(box)
 
@@ -127,9 +127,9 @@ def get_lines_coordinate(line_mask:np.array, axis:int, ths=30):
     Returns:
         [list]: the coordinate of lines.
     """
-    
+
     boxes = get_table_line(line_mask, axis=axis, lineW=ths)
-    
+
     lines_coordinate = []
     for coor in boxes:
         x1, y1, x2, y2 = coor
@@ -144,7 +144,7 @@ def get_lines_coordinate(line_mask:np.array, axis:int, ths=30):
             continue
 
         lines_coordinate.append([x1, y1, x2, y2])
-    
+
     return np.array(lines_coordinate)
 
 def get_table_coordinate(hor_lines_coord:list, ver_lines_coord:list):
@@ -159,7 +159,7 @@ def get_table_coordinate(hor_lines_coord:list, ver_lines_coord:list):
     """
     hor_lines_coord = np.array(hor_lines_coord)
     ver_lines_coord = np.array(ver_lines_coord)
-   
+
     tab_x1 = min(min(hor_lines_coord[:, 0]), min(ver_lines_coord[:, 0]))
     tab_y1 = min(min(hor_lines_coord[:, 1]), min(ver_lines_coord[:, 1]))
     tab_x2 = max(max(hor_lines_coord[:, 2]), max(ver_lines_coord[:, 2]))
@@ -187,11 +187,11 @@ def remove_noise(hor_lines_coord:list, ver_lines_coord:list, ths=15, noise_edge_
 
     ver_x = ver_lines_coord[:, 0]
     ver_y1 = ver_lines_coord[:, 1]
-    ver_y2 = ver_lines_coord[:, 3] 
+    ver_y2 = ver_lines_coord[:, 3]
 
     max_hor_length = max(hor_x2 - hor_x1)
     max_ver_length = max(ver_y2 - ver_y1)
-    
+
     if abs(min(hor_x1) - min(ver_x)) > ths:
         if min(ver_x) > min(hor_x1):
             mask_index = (hor_x1 > min(hor_x1) - ths) & (hor_x1 < min(hor_x1) + ths)
@@ -207,7 +207,7 @@ def remove_noise(hor_lines_coord:list, ver_lines_coord:list, ths=15, noise_edge_
         else:
             mask_index = (ver_x > max(ver_x) - ths) & (ver_x < max(ver_x) + ths)
             ver_mask[mask_index] = [False] * len(ver_mask[mask_index])
-    
+
     if abs(min(hor_y) - min(ver_y1)) > ths:
         if min(hor_y) > min(ver_y1):
             mask_index = (ver_y1 > min(ver_y1) - ths) & (ver_y1 < min(ver_y1) + ths)
@@ -215,7 +215,7 @@ def remove_noise(hor_lines_coord:list, ver_lines_coord:list, ths=15, noise_edge_
         else:
             mask_index = (hor_y > min(hor_y) - ths) & (hor_y < min(hor_y) + ths)
             hor_mask[mask_index] = [False] * len(hor_mask[mask_index])
-    
+
     if abs(max(hor_y) - max(ver_y2)) > ths:
         if max(hor_y) > max(ver_y2):
             mask_index = (hor_y > max(hor_y) - ths) & (hor_y < max(hor_y) + ths)
@@ -223,7 +223,7 @@ def remove_noise(hor_lines_coord:list, ver_lines_coord:list, ths=15, noise_edge_
         else:
             mask_index = (ver_y2 > max(ver_y2) - ths) & (ver_y2 < max(ver_y2) + ths)
             ver_mask[mask_index] = [False] * len(ver_mask[mask_index])
-    
+
     for i, stat in enumerate(hor_mask):
         if not stat:
             x1, _, x2, _ = hor_lines_coord[i]
@@ -235,9 +235,9 @@ def remove_noise(hor_lines_coord:list, ver_lines_coord:list, ths=15, noise_edge_
             _, y1, _, y2, _ = ver_lines_coord[i]
             if (y2 - y1) / max_ver_length > noise_edge_ths:
                 ver_mask[i] = True
-    
+
     return hor_lines_coord[hor_mask], ver_lines_coord[ver_mask]
-    
+
 
 def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
     """This function extract the coordinate of table, the coordinate of horizontal and vertical lines.
@@ -251,17 +251,17 @@ def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
     Returns:
         [tuple]: Tuple contain the coordinate of table, the coordinate of vertical and horizontal lines.
     """
-   
+
     # get horizontal lines mask image
     horizontal_lines_mask = get_horizontal_lines_mask(mask, kernel_len)
 
     # get vertical lines mask image
     vertical_lines_mask = get_vertical_lines_mask(mask, kernel_len)
-    
+
     # get coordinate of horizontal and vertical lines
     hor_lines_coord = get_lines_coordinate(horizontal_lines_mask, axis=0, ths=thresh)
     ver_lines_coord = get_lines_coordinate(vertical_lines_mask, axis=1, ths=thresh)
-    
+
     # remove noise edge
     hor_lines_coord, ver_lines_coord = remove_noise(hor_lines_coord, ver_lines_coord, thresh)
 
@@ -280,7 +280,7 @@ def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
             new_ver_lines_coord.append([x1, y1, x2, y2])
 
     for e in hor_lines_coord:
-        x1, y1, x2, y2 = e 
+        x1, y1, x2, y2 = e
 
         # dont add top and bottom border
         if abs(y1 - tab_y1) >= thresh and abs(y2 - tab_y2) >= thresh:
@@ -296,7 +296,7 @@ def get_coordinates(mask: np.darray, thresh=5, kernel_len=10):
     new_hor_lines_coord = normalize_v1(new_hor_lines_coord, axis=0, thresh=thresh)
     new_ver_lines_coord = normalize_v1(new_ver_lines_coord, axis=1, thresh=thresh)
     new_hor_lines_coord, new_ver_lines_coord = normalize_v2(new_ver_lines_coord, new_hor_lines_coord)
-    
+
     return [tab_x1, tab_y1, tab_x2, tab_y2], new_ver_lines_coord, new_hor_lines_coord
 
 
@@ -331,9 +331,9 @@ def normalize_v1(lines:list, axis:int, thresh=10):
         for v in np.unique(x2_coords):
             x2_mask = (v - thresh < x2_coords) & (x2_coords < v + thresh)
             update_coord = np.max(x2_coords[x2_mask])
-    
+
             filter_lines[id_range[x2_mask], 2] = update_coord
-        
+
         # equalize y
         concat_y = np.concatenate((y1_coords, y2_coords))
         for v in np.unique(concat_y):
@@ -349,16 +349,16 @@ def normalize_v1(lines:list, axis:int, thresh=10):
         for v in np.unique(y1_coords):
             y1_mask = (v - thresh < y1_coords) & (y1_coords < v + thresh)
             update_coord = np.min(y1_coords[y1_mask])
-        
+
             filter_lines[id_range[y1_mask], 1] = update_coord
 
         # equalize y2
         for v in np.unique(y2_coords):
             y2_mask = (v - thresh < y2_coords) & (y2_coords < v + thresh)
             update_coord = np.max(y2_coords[y2_mask])
-        
+
             filter_lines[id_range[y2_mask], 3] = update_coord
-        
+
         # equalize x
         concat_x = np.concatenate((x1_coords, x2_coords))
         for v in np.unique(concat_x):
@@ -368,7 +368,7 @@ def normalize_v1(lines:list, axis:int, thresh=10):
             update_coord = int(np.max(filter_x))
 
             filter_lines[id_range[x1_mask], 0] = filter_lines[id_range[x2_mask], 2] = update_coord
-    
+
     return filter_lines
 
 
@@ -384,7 +384,7 @@ def normalize_v2(ver_lines_coord:list, hor_lines_coord:list):
     """
     ver_lines_coord = np.array(ver_lines_coord)
     hor_lines_coord = np.array(hor_lines_coord)
-    
+
     # normalize x1
     ver_x1 = ver_lines_coord[:, 0].copy()
     hor_x1 = hor_lines_coord[:, 0].copy()
@@ -397,9 +397,9 @@ def normalize_v2(ver_lines_coord:list, hor_lines_coord:list):
             update_coord = concat_coor[tgt_idx + 1]
         else:
             update_coord = concat_coor[tgt_idx - 1]
-            
+
         hor_lines_coord[i, 0] = update_coord
-    
+
     # normalize x2
     ver_x2 = ver_lines_coord[:, 2].copy()
     hor_x2 = hor_lines_coord[:, 2].copy()
@@ -442,10 +442,9 @@ def normalize_v2(ver_lines_coord:list, hor_lines_coord:list):
             update_coord = concat_coor[tgt_idx + 1]
         else:
             update_coord = concat_coor[tgt_idx - 1]
-            
+
 
         ver_lines_coord[i, 3] = update_coord
-   
 
     return hor_lines_coord, ver_lines_coord
 
@@ -453,10 +452,10 @@ def is_line(line:list, lines:list, axis:int, thresh:int):
     """This is a function to check whether the coordinate is the coordinate of an existing line or not.
 
     Args:
-        line (list): The coordinate of line has form [x_min, y_min, x_max, y_max]
-        lines (list): The coordinate of lines has form [[x_min, y_min, x_max, y_max]]
+        line (list): The coordinate of line
+        lines (list): The coordinate of lines
         axis (int): If axis == 0 lines is the checking line is horizontal line, otherwise vertical lines.
-        thresh (float): The threshold value 
+        thresh (float): The threshold value to group line which has same x, y coordinate
 
     Returns:
         bool: This method returns True if the coordinate is the coordinate of an existing line, otherwise returns False
@@ -484,7 +483,5 @@ def is_line(line:list, lines:list, axis:int, thresh:int):
 
             if line_y1 - thresh <= y1 < y2 <= line_y2 + thresh:
                 return True
-    
+
     return False
-
-
