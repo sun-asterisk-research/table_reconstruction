@@ -1,14 +1,15 @@
 from shapely.geometry import LineString
-from tsr.utils.lines_utils import is_line
+from table_reconstruction.utils.lines_utils import is_line
 import numpy as np
 
-def get_intersection_points(horizontal_lines:list, vertical_lines:list, tab_coord:list) -> tuple:
+
+def get_intersection_points(horizontal_lines, vertical_lines, tab_coord):
     """This a function which find the coordinate (x, y) of intersection points
 
     Args:
-        horizontal_lines (list): The coordinate of horizontal lines has form [(x_min, y_min. x_max, y_max)]
-        vertical_lines (list): The coordinate of vertical lines has form [(x_min, y_min. x_max, y_max)]
-        tab_coord (list): The coordinate of table has form [x_min, y_min, x_max, y_max]
+        horizontal_lines (list): The coordinate of horizontal lines
+        vertical_lines (list): The coordinate of vertical lines
+        tab_coord (list): The coordinate of table
 
     Returns:
         tuple: The tuple contains intersection points and fake intersection points
@@ -39,10 +40,9 @@ def get_intersection_points(horizontal_lines:list, vertical_lines:list, tab_coor
 
             if len(list(intersect_point.coords)) != 0:
                 intersect_points.append(list(intersect_point.coords))
-        
+
             if len(list(fake_intersect_point.coords)) != 0:
                 fake_intersect_points.append(list(fake_intersect_point.coords))
-    
 
     intersect_points = np.array(intersect_points)
     intersect_points = np.squeeze(intersect_points, axis=1)
@@ -52,44 +52,49 @@ def get_intersection_points(horizontal_lines:list, vertical_lines:list, tab_coor
     return intersect_points, fake_intersect_points
 
 
-def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:   
-    """This is a function to check whether the coordinate is the coordinate of an existing cell or not.
+def is_cell_existed(cell_coord: list, thresh: float, *lines) -> bool:
+    """This is a function to check whether the coordinate is
+    the coordinate of an existing cell or not.
 
     Args:
-        cell_coord (List): The coordinate of cell has form [x_min, y_min, x_max, y_max]
-        thresh (float): [description]
+        cell_coord (list): The coordinate of cell
+        thresh (float): The threshold value to group line which has same x, y coordinate
 
     Returns:
-        bool: This method returns True if the coordinate is the coordinate of an existing cell, otherwise returns False
+        bool: returns True if the coordinate is the coordinate of an existing cell,
+        otherwise returns False
     """
-    x1, y1, x2, y2 = cell_coord    
+    x1, y1, x2, y2 = cell_coord
     h_lines, v_lines = lines[0][0]
 
-    left_status = is_line([x1, y1, x1, y2], v_lines, axis=1, thresh=thresh)
+    left_status = is_line([x1, y1, x1, y2], v_lines, axis=1, ths=thresh)
     if left_status is False:
         return False
 
-    right_status = is_line([x2, y1, x2, y2], v_lines, axis=1, thresh=thresh)
+    right_status = is_line([x2, y1, x2, y2], v_lines, axis=1, ths=thresh)
     if right_status is False:
         return False
 
-    top_status = is_line([x1, y1, x2, y1], h_lines, axis=0, thresh=thresh)
+    top_status = is_line([x1, y1, x2, y1], h_lines, axis=0, ths=thresh)
     if top_status is False:
         return False
 
-    bottom_status = is_line([x1, y2, x2, y2], h_lines, axis=0, thresh=thresh)
+    bottom_status = is_line([x1, y2, x2, y2], h_lines, axis=0, ths=thresh)
     if bottom_status is False:
         return False
 
     return True
 
-def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple: 
-    """This is a function which find the coordinates of bottom right point of a cell by coordinate of top left point
+
+def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple:
+    """This is a function which find the coordinates of bottom right point of
+    a cell by coordinate of top left point
 
     Args:
         pred_point (tuple): The top left point has form (x, y)
         points (list): The list of intersection points has form [[x, y]]
-        ths (int, optional): The threshold value to find the coordinate of point on y-axis which is nearest to top left point. Defaults to 5.
+        ths (int, optional): The threshold to find the coordinate of point
+        on y-axis which is nearest to top left point. Defaults to 5.
 
     Returns:
         tuple: The coordinate of bottom right point has form [x, y]
@@ -109,42 +114,45 @@ def get_bottom_right_corner(pred_point: tuple, points: list, ths=5) -> tuple:
         return (bottom_right_vertices[0], bottom_right_vertices[1])
 
 
-def calculate_cell_coordinate(points: list, fake_flag: bool, thresh: int, *lines) -> list:
+def calculate_cell_coordinate(points, fake_flag, ths, *lines):
     """This is a function which find the coordinate of cells in table
 
     Args:
-        points (list): The list of the coordinate of intersection points has form [(x_min, y_min, x_max, y_max)]
-        fake_flag (bool): if True, this method extract fake the coordinate of points, otherwise find the real coordinate of points
-        thresh (int): The threshold value to find the coordinate of point on y-axis which is nearest to top left point. Defaults to 5.
+        points (list): The list of the coordinate of intersection points
+        fake_flag (bool): if True, this method extract fake the coordinate of points,
+        otherwise find the real coordinate of points
+        ths (int): The threshold value to find the coordinate of point o
+        n y-axis which is nearest to top left point. Defaults to 5.
     Returns:
-        [List]: The coordinate of cells.
+        list: The coordinate of cells.
     """
     cells = []
-    list_x_coords = np.array(points[:, 0])
-    list_y_coords = np.array(points[:, 1])
+    x_coords = np.array(points[:, 0])
+    y_coords = np.array(points[:, 1])
 
     for point in points:
         x1, y1 = point
-        
-        # define the nearest right and bottom vertices
-        y_coord_mask = (list_x_coords > x1 - thresh) & (list_x_coords < x1 + thresh) & (list_y_coords > y1)
-        filter_y_coords = sorted(list_y_coords[y_coord_mask])
 
         # define the nearest right and bottom vertices
-        x_coord_mask = (list_y_coords > y1 - thresh) & (list_y_coords < y1 + thresh) & (list_x_coords > x1)
-        filter_x_coords = sorted(list_x_coords[x_coord_mask])
+        y_coord_mask = (x_coords > x1 - ths) & (x_coords < x1 + ths) & (y_coords > y1)
+        filter_y_coords = sorted(y_coords[y_coord_mask])
+
+        # define the nearest right and bottom vertices
+        x_coord_mask = (y_coords > y1 - ths) & (y_coords < y1 + ths) & (x_coords > x1)
+        filter_x_coords = sorted(x_coords[x_coord_mask])
 
         if len(filter_y_coords) > 0 and len(filter_x_coords) > 0:
             status = 0
             for pred_x2 in filter_x_coords:
                 for pred_y2 in filter_y_coords:
-                    x2, y2 = get_bottom_right_corner((pred_x2, pred_y2), points.copy(), thresh)
+                    point = (pred_x2, pred_y2)
+                    x2, y2 = get_bottom_right_corner(point, points.copy(), ths)
                     if x2 and y2:
                         if fake_flag:
                             status = 1
                             break
                         else:
-                            if is_cell_existed([x1, y1, x2, y2], thresh, lines):
+                            if is_cell_existed([x1, y1, x2, y2], ths, lines):
                                 status = 1
                                 break
                 if status == 1:
@@ -159,15 +167,15 @@ def calculate_cell_coordinate(points: list, fake_flag: bool, thresh: int, *lines
             y2 = int(y2)
             cells.append([x1, x2, y1, y2])
 
-    return cells                  
+    return cells
 
 
-def sort_cell(cells: list, ths=5) -> list:
+def sort_cell(cells, ths=5):
     """Sort cells from left to right and top to bottom
 
     Args:
         cells (list): The coordinate of cells.
-        ths (int, optional): The threshold value to group cells which has same y coordinate. Defaults to 5.
+        ths (int, optional): The threshold value to group cells has same y coordinate.
 
     Returns:
         list: The sorted coordinate of cells
@@ -214,19 +222,21 @@ def predict_relation(cells: list):
         for id_b in ids[list_y1_coords == y2_a]:
             if id_b == id_a:
                 continue
-            x1_b, x2_b, _, _ = cells[id_b] 
+            x1_b, x2_b, _, _ = cells[id_b]
             sorted_x = sorted([x1_a, x2_a, x1_b, x2_b])
-            if abs(sorted_x[1] - sorted_x[2]) != 0 and (sorted_x[1] >= x1_a) and (sorted_x[2] <= x2_a):
-                ver_couple_ids.append([id_a, id_b])
-    
+            if abs(sorted_x[1] - sorted_x[2]) != 0:
+                if (sorted_x[1] >= x1_a) and (sorted_x[2] <= x2_a):
+                    ver_couple_ids.append([id_a, id_b])
+
         # horizontal
         for id_b in ids[list_x1_coords == x2_a]:
             if id_b == id_a:
                 continue
             _, _, y1_b, y2_b = cells[id_b]
-            
+
             sorted_y = sorted([y1_a, y2_a, y1_b, y2_b])
-            if abs(sorted_y[1] - sorted_y[2]) != 0 and (sorted_y[1] >= y1_a) and (sorted_y[2] <= y2_a):
-                hor_couple_ids.append([id_a, id_b])
-    
+            if abs(sorted_y[1] - sorted_y[2]) != 0:
+                if (sorted_y[1] >= y1_a) and (sorted_y[2] <= y2_a):
+                    hor_couple_ids.append([id_a, id_b])
+
     return hor_couple_ids, ver_couple_ids

@@ -6,11 +6,12 @@ class TestModule(unittest.TestCase):
         exception = None
         try:
             import table_reconstruction
+
             print(table_reconstruction.__version__)
         except Exception as e:
             exception = e
         self.assertIsNone(exception)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
