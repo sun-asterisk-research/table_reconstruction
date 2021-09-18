@@ -5,9 +5,10 @@ import numpy as np
 
 
 def get_intersection_points(
-    horizontal_lines:List[List],
-    vertical_lines:List[List],
-    tab_coord:List) -> Tuple[List, List]:
+    horizontal_lines: List[List],
+    vertical_lines: List[List],
+    tab_coord: List
+) -> Tuple[np.ndarray, np.ndarray]:
     """This a function which find the coordinate (x, y) of intersection points
 
     Args:
@@ -16,7 +17,7 @@ def get_intersection_points(
         tab_coord (List): The coordinate of table
 
     Returns:
-        Tuple[List, List]: The tuple contains intersection points and fake intersection points
+        Tuple[List, List]: intersection and fake intersection points
     """
 
     intersect_points = []
@@ -49,9 +50,9 @@ def get_intersection_points(
                 fake_intersect_points.append(list(fake_intersect_point.coords))
 
     intersect_points = np.array(intersect_points)
-    intersect_points = np.squeeze(intersect_points, axis=1)
+    intersect_points = np.array(np.squeeze(intersect_points, axis=1))
     fake_intersect_points = np.array(fake_intersect_points)
-    fake_intersect_points = np.squeeze(fake_intersect_points, axis=1)
+    fake_intersect_points = np.array(np.squeeze(fake_intersect_points, axis=1))
 
     return intersect_points, fake_intersect_points
 
@@ -59,7 +60,8 @@ def get_intersection_points(
 def is_cell_existed(
     cell_coord: List[List],
     thresh: float,
-    *lines) -> bool:
+    *lines: Tuple[List, ...]
+) -> bool:
     """This is a function to check whether the coordinate is
     the coordinate of an existing cell or not.
 
@@ -74,19 +76,19 @@ def is_cell_existed(
     x1, y1, x2, y2 = cell_coord
     h_lines, v_lines = lines[0][0]
 
-    left_status = is_line([x1, y1, x1, y2], v_lines, axis=1, ths=thresh)
+    left_status = is_line([x1, y1, x1, y2], np.array(v_lines), axis=1, ths=thresh)
     if left_status is False:
         return False
 
-    right_status = is_line([x2, y1, x2, y2], v_lines, axis=1, ths=thresh)
+    right_status = is_line([x2, y1, x2, y2], np.array(v_lines), axis=1, ths=thresh)
     if right_status is False:
         return False
 
-    top_status = is_line([x1, y1, x2, y1], h_lines, axis=0, ths=thresh)
+    top_status = is_line([x1, y1, x2, y1], np.array(h_lines), axis=0, ths=thresh)
     if top_status is False:
         return False
 
-    bottom_status = is_line([x1, y2, x2, y2], h_lines, axis=0, ths=thresh)
+    bottom_status = is_line([x1, y2, x2, y2], np.array(h_lines), axis=0, ths=thresh)
     if bottom_status is False:
         return False
 
@@ -95,14 +97,15 @@ def is_cell_existed(
 
 def get_bottom_right_corner(
     pred_point: Tuple,
-    points: List[List],
-    ths: int = 5) -> Tuple[int, int]:
+    points: np.ndarray,
+    ths: int = 5
+) -> Tuple:
     """This is a function which find the coordinates of bottom right point of
     a cell by coordinate of top left point
 
     Args:
         pred_point (Tuple): The top left point has form (x, y)
-        points (List[List]): The list of intersection points has form [[x, y]]
+        points (np.ndarray): The list of intersection points has form [[x, y]]
         ths (int, optional): The threshold to find the coordinate of point
         on y-axis which is nearest to top left point. Defaults to 5.
 
@@ -125,10 +128,11 @@ def get_bottom_right_corner(
 
 
 def calculate_cell_coordinate(
-    points: List[List],
+    points: np.ndarray,
     fake_flag: bool,
     ths: int,
-    *lines: List) -> List[List]:
+    *lines: List
+) -> List[List]:
     """This is a function which find the coordinate of cells in table
 
     Args:
@@ -185,8 +189,9 @@ def calculate_cell_coordinate(
 
 
 def sort_cell(
-    cells: List[List],
-    ths: int=5) -> List[List]:
+    cells: np.ndarray,
+    ths: int = 5
+) -> List[List]:
     """Sort cells from left to right and top to bottom
 
     Args:
@@ -197,7 +202,6 @@ def sort_cell(
         List[List]: The sorted coordinate of cells
     """
     sorted_cells = []
-    cells = np.array(cells)
     y1_coords = cells[:, 2]
     uni_y1_coords = np.unique(y1_coords)
 
@@ -216,12 +220,12 @@ def sort_cell(
 
 
 def predict_relation(cells: List[List]) -> Tuple[List, List]:
-    """This is a function which extract relationship value between cells.
+    """Extract relationship value between cells.
 
     Args:
         cells (List[List]): The sorted coordinate of cells
     Returns:
-        Tuple[List, List]: two list contain id couples corrsponding to relationship value
+        Tuple[List, List]: tuple contain id couples corrsponding to relationship value
     """
 
     hor_couple_ids = []

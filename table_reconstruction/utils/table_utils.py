@@ -1,6 +1,7 @@
 from typing import List, Tuple, Dict
 import numpy as np
 
+
 class DirectedGraph(object):
     def __init__(self, nb_vertices: int):
         """Initialize DirectedGraph class
@@ -8,10 +9,10 @@ class DirectedGraph(object):
         Args:
             nb_vertices (int): the number of vertices
         """
-        self.nb_vertices = nb_vertices
-        self.adj = [[] for i in range(nb_vertices)]
-        self.undirected_vertex = [[] for i in range(nb_vertices)]
-        self.span_cell_ids = []
+        self.nb_vertices: int = nb_vertices
+        self.adj: List[List] = [[] for i in range(nb_vertices)]
+        self.undirected_vertex: List[List] = [[] for i in range(nb_vertices)]
+        self.span_cell_ids: List = []
 
     def add_edge(self, id_a: int, id_b: int):
         """Add edge to graph
@@ -123,7 +124,8 @@ def convertSpanCell2DocxCoord(
     fake_cells: List[List],
     span_cell_ids: List,
     nb_col: int,
-    thresh: int = 5) -> List[Dict]:
+    thresh: int = 5
+) -> List[Dict]:
     """Find the XY coordinate of span cells
 
     Args:

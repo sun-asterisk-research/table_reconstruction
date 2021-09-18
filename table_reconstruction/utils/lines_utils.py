@@ -9,7 +9,8 @@ import cv2
 def get_table_line(
     binimg: np.ndarray,
     axis: int,
-    lineW: int = 5) -> List[List]:
+    lineW: int = 5
+) -> List[List]:
     """Extract the coordinate of lines from table binary image
 
     Args:
@@ -90,11 +91,13 @@ def solve(box: List) -> Tuple[int, int, int, int, int]:
     return angle, w, h, cx, cy
 
 
-def _order_points(pts: np.ndarray) -> np.ndarray:
+def _order_points(
+    pts: Tuple[np.ndarray]
+) -> np.ndarray:
     """Extract top left. top right, bottom left, bottom right of region
 
     Args:
-        pts (np.ndarray): The coordinate of points
+        pts (Tuple): The coordinate of points
 
     Returns:
         np.ndarray: The coordinate of points.
@@ -132,7 +135,8 @@ def image_location_sort_box(box: List) -> List:
 def get_lines_coordinate(
     line_mask: np.ndarray,
     axis: int,
-    ths: int = 30) -> List[List]:
+    ths: int = 30
+) -> np.ndarray:
     """Extract coordinate of line from  binary image
 
     Args:
@@ -165,7 +169,10 @@ def get_lines_coordinate(
     return np.array(lines_coordinate)
 
 
-def get_table_coordinate(hor_lines_coord: List[List], ver_lines_coord: List[List]) -> List:
+def get_table_coordinate(
+    hor_lines: np.ndarray,
+    ver_lines: np.ndarray
+) -> List:
     """Extract the coordinate of table in image
 
     Args:
@@ -175,27 +182,26 @@ def get_table_coordinate(hor_lines_coord: List[List], ver_lines_coord: List[List
     Returns:
         List: The coordinat of table has form (xmin, ymin, xmax, ymax)
     """
-    hor_lines_coord = np.array(hor_lines_coord)
-    ver_lines_coord = np.array(ver_lines_coord)
 
-    tab_x1 = min(min(hor_lines_coord[:, 0]), min(ver_lines_coord[:, 0]))
-    tab_y1 = min(min(hor_lines_coord[:, 1]), min(ver_lines_coord[:, 1]))
-    tab_x2 = max(max(hor_lines_coord[:, 2]), max(ver_lines_coord[:, 2]))
-    tab_y2 = max(max(hor_lines_coord[:, 3]), max(ver_lines_coord[:, 3]))
+    tab_x1 = min(min(hor_lines[:, 0]), min(ver_lines[:, 0]))
+    tab_y1 = min(min(hor_lines[:, 1]), min(ver_lines[:, 1]))
+    tab_x2 = max(max(hor_lines[:, 2]), max(ver_lines[:, 2]))
+    tab_y2 = max(max(hor_lines[:, 3]), max(ver_lines[:, 3]))
 
     return [tab_x1, tab_y1, tab_x2, tab_y2]
 
 
 def remove_noise(
-    hor_lines: List[List],
-    ver_lines: List[List],
+    hor_lines: np.ndarray,
+    ver_lines: np.ndarray,
     ths: int = 15,
-    noise_edge_ths: float = 0.5) -> Tuple[List[List], List[List]]:
+    noise_edge_ths: float = 0.5
+) -> Tuple[np.ndarray, np.ndarray]:
     """Remove noise edge from image
 
     Args:
-        hor_lines (List[List]): The coordinate of horizontal lines
-        ver_lines (List[List]): The coordinate of vertical lines
+        hor_lines (np.ndarray): The coordinate of horizontal lines
+        ver_lines (np.ndarray): The coordinate of vertical lines
         ths (int, optional): Threshold value to group lines which has same coordinate.
         noise_edge_ths (float, optional): Threshold value check whether
         the line is noise edge or not.
@@ -266,7 +272,8 @@ def remove_noise(
 def get_coordinates(
     mask: np.ndarray,
     ths: int = 5,
-    kernel_len: int = 10) -> Tuple[List, List[List], List[List]]:
+    kernel_len: int = 10
+) -> Tuple[List, List[List], List[List]]:
     """This function extract the coordinate of table, horizontal and vertical lines.
 
     Args:
@@ -277,7 +284,8 @@ def get_coordinates(
         kernel_len (int, optional): The size of kernel is applied.
 
     Returns:
-        Tuple[List, List[List], List[List]]: Tuple contain the coordinate of table, vertical and horizontal lines.
+        Tuple[List, List[List], List[List]]: Tuple contain the coordinate of
+        table, vertical and horizontal lines.
     """
 
     # get horizontal lines mask image
@@ -320,8 +328,8 @@ def get_coordinates(
     new_hor_lines.append([tab_x1, tab_y2, tab_x2, tab_y2])
 
     # normalize
-    new_hor_lines = normalize_v1(new_hor_lines, axis=0, thresh=ths)
-    new_ver_lines = normalize_v1(new_ver_lines, axis=1, thresh=ths)
+    new_hor_lines = normalize_v1(new_hor_lines, axis=0, ths=ths)
+    new_ver_lines = normalize_v1(new_ver_lines, axis=1, ths=ths)
     new_hor_lines, new_ver_lines = normalize_v2(new_ver_lines, new_hor_lines)
 
     return [tab_x1, tab_y1, tab_x2, tab_y2], new_ver_lines, new_hor_lines
@@ -330,7 +338,8 @@ def get_coordinates(
 def normalize_v1(
     lines: List[List],
     axis: int,
-    ths: int = 10) -> List[List]:
+    ths: int = 10
+) -> np.ndarray:
     """Normalize the coordinate of vertical lines or horizontal lines
 
     Args:
@@ -340,7 +349,7 @@ def normalize_v1(
         has same x or y coordinate.
 
     Returns:
-        List[List]: The normalized coordinate of lines.
+        np.ndarray: The normalized coordinate of lines.
     """
     filter_lines = np.array(lines.copy())
     id_range = np.arange(len(filter_lines))
@@ -407,8 +416,9 @@ def normalize_v1(
 
 
 def normalize_v2(
-    ver_lines_coord:List[List],
-    hor_lines_coord:List[List]) -> Tuple(List[List], List[List]):
+    ver_lines_coord: List[List],
+    hor_lines_coord: List[List]
+) -> Tuple[List[List], List[List]]:
     """ Normalize the coordinate between vertical lines and horizontal lines
 
     Args:
@@ -416,14 +426,15 @@ def normalize_v2(
         hor_lines_coord (List[List]): The coordinate of horizontal lines
 
     Returns:
-        Tuple(List[List], List[List]): the normalized coordinate of horizontal and vertical lines
+        Tuple(List[List], List[List]): the normalized coordinate of
+        horizontal and vertical lines
     """
-    ver_lines_coord = np.array(ver_lines_coord)
-    hor_lines_coord = np.array(hor_lines_coord)
+    ver_lines = np.array(ver_lines_coord.copy())
+    hor_lines = np.array(hor_lines_coord.copy())
 
     # normalize x1
-    ver_x1 = ver_lines_coord[:, 0].copy()
-    hor_x1 = hor_lines_coord[:, 0].copy()
+    ver_x1 = ver_lines[:, 0].copy()
+    hor_x1 = hor_lines[:, 0].copy()
 
     for i, x1 in enumerate(hor_x1):
         concat_coor = sorted(np.concatenate(([x1], ver_x1)))
@@ -434,11 +445,11 @@ def normalize_v2(
         else:
             update_coord = concat_coor[tgt_idx - 1]
 
-        hor_lines_coord[i, 0] = update_coord
+        hor_lines[i, 0] = update_coord
 
     # normalize x2
-    ver_x2 = ver_lines_coord[:, 2].copy()
-    hor_x2 = hor_lines_coord[:, 2].copy()
+    ver_x2 = ver_lines[:, 2].copy()
+    hor_x2 = hor_lines[:, 2].copy()
 
     for i, x2 in enumerate(hor_x2):
         concat_coor = sorted(np.concatenate(([x2], ver_x2)))
@@ -449,11 +460,11 @@ def normalize_v2(
         else:
             update_coord = concat_coor[tgt_idx - 1]
 
-        hor_lines_coord[i, 2] = update_coord
+        hor_lines[i, 2] = update_coord
 
     # normalize y1
-    ver_y1 = ver_lines_coord[:, 1].copy()
-    hor_y1 = hor_lines_coord[:, 1].copy()
+    ver_y1 = ver_lines[:, 1].copy()
+    hor_y1 = hor_lines[:, 1].copy()
 
     for i, y1 in enumerate(ver_y1):
         concat_coor = sorted(np.concatenate(([y1], hor_y1)))
@@ -464,11 +475,11 @@ def normalize_v2(
         else:
             update_coord = concat_coor[tgt_idx - 1]
 
-        ver_lines_coord[i, 1] = update_coord
+        ver_lines[i, 1] = update_coord
 
     # normalize y2
-    ver_y2 = ver_lines_coord[:, 3].copy()
-    hor_y2 = hor_lines_coord[:, 3].copy()
+    ver_y2 = ver_lines[:, 3].copy()
+    hor_y2 = hor_lines[:, 3].copy()
 
     for i, y2 in enumerate(ver_y2):
         concat_coor = sorted(np.concatenate(([y2], hor_y2)))
@@ -479,30 +490,30 @@ def normalize_v2(
         else:
             update_coord = concat_coor[tgt_idx - 1]
 
-        ver_lines_coord[i, 3] = update_coord
+        ver_lines[i, 3] = update_coord
 
-    return hor_lines_coord, ver_lines_coord
+    return hor_lines, ver_lines
 
 
 def is_line(
     line: List,
-    lines: List[List],
+    lines: np.ndarray,
     axis: int,
-    ths: float) -> bool:
+    ths: float
+) -> bool:
     """Check whether the coordinate is the coordinate of an existing line or not.
 
     Args:
         line (list): The coordinate of line
-        lines (list): The coordinate of lines
+        lines (np.ndarray): The coordinate of lines
         axis (int): If axis == 0 lines is horizontal line, otherwise vertical lines.
         thresh (float): The threshold value to group line which has same x, y coordinate
 
     Returns:
-        Bool: returns True if the coordinate is coordinate of an existing line,
+        bool: returns True if the coordinate is coordinate of an existing line,
         otherwise returns False
     """
     x1, y1, x2, y2 = line
-    lines = np.array(lines)
 
     # horizontal
     if axis == 0:

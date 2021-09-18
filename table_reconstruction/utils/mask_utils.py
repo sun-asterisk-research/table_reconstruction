@@ -2,9 +2,7 @@ import numpy as np
 import cv2
 
 
-def normalize(
-    img: np.ndarray,
-    mask_img: np.ndarray) -> np.ndarray:
+def normalize(img: np.ndarray, mask_img: np.ndarray) -> np.ndarray:
     """Convert shape of mask image to shape of input image
 
     Args:
@@ -24,9 +22,7 @@ def normalize(
     return mask
 
 
-def get_hor_lines_mask(
-    mask: np.ndarray,
-    kernel_len: int) -> np.ndarray:
+def get_hor_lines_mask(mask: np.ndarray, kernel_len: int) -> np.ndarray:
 
     """Get binary image which contain only horizontal lines
 
@@ -44,9 +40,7 @@ def get_hor_lines_mask(
     return horizontal_lines_mask
 
 
-def get_ver_lines_mask(
-    mask: np.ndarray,
-    kernel_len: int) -> np.ndarray:
+def get_ver_lines_mask(mask: np.ndarray, kernel_len: int) -> np.ndarray:
 
     """Get binary image which contain only vertical lines
 
