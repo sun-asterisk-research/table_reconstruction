@@ -14,11 +14,10 @@ jobs:
 
   - name: Lint and Test with Tox
     stage: Check source code 🔎
-    image: python:3.8
+    image: docker.io/niits/torch1.8.1-py38-cpu
     script:
       - pip3 install tox==3.24.3 virtualenv==20.7.2 opencv-python-headless==4.5.3.56
       - tox -v
-    allow_failure: true
     coverage:
       type: cobertura
       path: coverage.xml
@@ -64,6 +63,11 @@ jobs:
       paths:
         - docs/build/html
       expires_in: 14 days
+    only:
+      branches:
+        - master
+      events:
+        - push
 
   - name: Build Snapshot
     workspace: shared
@@ -91,7 +95,8 @@ jobs:
         --verbose -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD}  \
         --repository-url https://upload.pypi.org/legacy/ \
         --non-interactive
-
     only:
       branches:
         - master
+      events:
+        - push
