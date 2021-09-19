@@ -126,8 +126,8 @@ def image_location_sort_box(box: List) -> List:
     """
     x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
     pts = (x1, y1), (x2, y2), (x3, y3), (x4, y4)
-    pts = np.array(pts, dtype="float32")
-    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = _order_points(pts)
+    arr_pts = np.array(pts, dtype="float32")
+    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = _order_points(arr_pts)
 
     return [x1, y1, x2, y2, x3, y3, x4, y4]
 
