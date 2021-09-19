@@ -14,10 +14,11 @@ jobs:
 
   - name: Lint and Test with Tox
     stage: Check source code 🔎
-    image: python:3.6
+    image: python:3.8
     script:
       - pip3 install tox opencv-python-headless
-      - tox
+      - pip cache dir
+      - tox -v
     coverage:
       type: cobertura
       path: coverage.xml
