@@ -17,7 +17,7 @@ def get_intersection_points(
         tab_coord (List): The coordinate of table
 
     Returns:
-        Tuple[List, List]: intersection and fake intersection points
+        Tuple[np.ndarray, np.ndarray]: intersection and fake intersection points
     """
 
     intersect_points = []
@@ -49,12 +49,12 @@ def get_intersection_points(
             if len(list(fake_intersect_point.coords)) != 0:
                 fake_intersect_points.append(list(fake_intersect_point.coords))
 
-    intersect_points = np.array(intersect_points)
-    intersect_points = np.array(np.squeeze(intersect_points, axis=1))
-    fake_intersect_points = np.array(fake_intersect_points)
-    fake_intersect_points = np.array(np.squeeze(fake_intersect_points, axis=1))
+    final_intersect_points = np.array(intersect_points)
+    final_intersect_points = np.squeeze(final_intersect_points, axis=1)
+    final_fake_intersect_points = np.array(fake_intersect_points)
+    final_fake_intersect_points = np.squeeze(final_fake_intersect_points, axis=1)
 
-    return intersect_points, fake_intersect_points
+    return final_intersect_points, final_fake_intersect_points
 
 
 def is_cell_existed(

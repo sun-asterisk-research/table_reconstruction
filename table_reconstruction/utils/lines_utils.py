@@ -92,12 +92,12 @@ def solve(box: List) -> Tuple[int, int, int, int, int]:
 
 
 def _order_points(
-    pts: Tuple[np.ndarray]
+    pts: np.ndarray
 ) -> np.ndarray:
     """Extract top left. top right, bottom left, bottom right of region
 
     Args:
-        pts (Tuple): The coordinate of points
+        pts (np.ndarray[Tuple]): The coordinate of points
 
     Returns:
         np.ndarray: The coordinate of points.
@@ -146,7 +146,7 @@ def get_lines_coordinate(
         ths (int, optional): The threshold value to ignore noise edge.
 
     Returns:
-        List[List]: the coordinate of lines.
+        np.ndarray: the coordinate of lines.
     """
 
     boxes = get_table_line(line_mask, axis=axis, lineW=ths)
@@ -176,8 +176,8 @@ def get_table_coordinate(
     """Extract the coordinate of table in image
 
     Args:
-        hor_lines_coord (List[List]): The coordinate of horizontal lines
-        ver_lines_coord (List[List]): The coordinate of vertical lines
+        hor_lines_coord (np.ndarray): The coordinate of horizontal lines
+        ver_lines_coord (np.ndarray): The coordinate of vertical lines
 
     Returns:
         List: The coordinat of table has form (xmin, ymin, xmax, ymax)
@@ -207,7 +207,7 @@ def remove_noise(
         the line is noise edge or not.
 
     Returns:
-        Tuple[List[List], List[List]]: The coordinate of horizontal and vertical lines.
+        Tuple[np.ndarray, np.ndarray]: The coordinate of horizontal and vertical lines.
     """
     hor_mask = np.array([True] * len(hor_lines))
     ver_mask = np.array([True] * len(ver_lines))
@@ -273,7 +273,7 @@ def get_coordinates(
     mask: np.ndarray,
     ths: int = 5,
     kernel_len: int = 10
-) -> Tuple[List, List[List], List[List]]:
+) -> Tuple[List, np.ndarray, np.ndarray]:
     """This function extract the coordinate of table, horizontal and vertical lines.
 
     Args:
@@ -284,7 +284,7 @@ def get_coordinates(
         kernel_len (int, optional): The size of kernel is applied.
 
     Returns:
-        Tuple[List, List[List], List[List]]: Tuple contain the coordinate of
+        Tuple[List, np.ndarray, np.ndarray]: Tuple contain the coordinate of
         table, vertical and horizontal lines.
     """
 
@@ -328,11 +328,11 @@ def get_coordinates(
     new_hor_lines.append([tab_x1, tab_y2, tab_x2, tab_y2])
 
     # normalize
-    new_hor_lines = normalize_v1(new_hor_lines, axis=0, ths=ths)
-    new_ver_lines = normalize_v1(new_ver_lines, axis=1, ths=ths)
-    new_hor_lines, new_ver_lines = normalize_v2(new_ver_lines, new_hor_lines)
+    final_hor_lines = normalize_v1(new_hor_lines, axis=0, ths=ths)
+    final_ver_lines = normalize_v1(new_ver_lines, axis=1, ths=ths)
+    final_hor_lines, final_ver_lines = normalize_v2(final_ver_lines, final_hor_lines)
 
-    return [tab_x1, tab_y1, tab_x2, tab_y2], new_ver_lines, new_hor_lines
+    return [tab_x1, tab_y1, tab_x2, tab_y2], final_ver_lines, final_hor_lines
 
 
 def normalize_v1(
@@ -416,22 +416,19 @@ def normalize_v1(
 
 
 def normalize_v2(
-    ver_lines_coord: List[List],
-    hor_lines_coord: List[List]
-) -> Tuple[List[List], List[List]]:
+    ver_lines: np.ndarray,
+    hor_lines: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     """ Normalize the coordinate between vertical lines and horizontal lines
 
     Args:
-        ver_lines_coord (List[List]): The coordinate of vertical lines
-        hor_lines_coord (List[List]): The coordinate of horizontal lines
+        ver_lines_coord (np.ndarray): The coordinate of vertical lines
+        hor_lines_coord (np.ndarray): The coordinate of horizontal lines
 
     Returns:
-        Tuple(List[List], List[List]): the normalized coordinate of
+        Tuple(np.ndarray, np.ndarray): the normalized coordinate of
         horizontal and vertical lines
     """
-    ver_lines = np.array(ver_lines_coord.copy())
-    hor_lines = np.array(hor_lines_coord.copy())
-
     # normalize x1
     ver_x1 = ver_lines[:, 0].copy()
     hor_x1 = hor_lines[:, 0].copy()
@@ -504,7 +501,7 @@ def is_line(
     """Check whether the coordinate is the coordinate of an existing line or not.
 
     Args:
-        line (list): The coordinate of line
+        line (List): The coordinate of line
         lines (np.ndarray): The coordinate of lines
         axis (int): If axis == 0 lines is horizontal line, otherwise vertical lines.
         thresh (float): The threshold value to group line which has same x, y coordinate
