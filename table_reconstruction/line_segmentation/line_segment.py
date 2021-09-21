@@ -12,8 +12,8 @@ from PIL import Image
 
 from .utils import load_model_unet
 
-
-MODEL_PATH = os.path.dirname(os.path.abspath(__file__)) + "/tmp/resnet_weight.pth"
+DIR_PATH = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = DIR_PATH + "/tmp/resnet_weight.pth"
 WEIGHT_URL = "https://drive.google.com/u/0/uc?id=18YEiAzUs9NXz0FwBuU0JicEWc_F2V7tq"
 
 
@@ -27,21 +27,21 @@ class LineSegmentation:
         for segmenting lines in table images
 
         Args:
-            model_path (str): path to model weight
-            device (torch.device, optional): torch device. Defaults to "cpu".
+            model_path (str): path to model weight file
+            device (torch.device, optional): torch device. Defaults is "cpu".
         """
         self.device = device
         if model_path is None:
             if not os.path.exists(MODEL_PATH):
                 logging.info("Obtain weight of model...")
-                dir_path = os.path.dirname(os.path.abspath(__file__))
-                if not os.path.exists(dir_path + "/tmp/"):
-                    os.mkdir(dir_path + "/tmp/")
+                if not os.path.exists(DIR_PATH + "/tmp/"):
+                    os.mkdir(DIR_PATH + "/tmp/")
                 try:
                     gdown.download(url=WEIGHT_URL, output=MODEL_PATH, quiet=False)
                 except Exception as e:
                     logging.info("Could not download weight, please try again!")
                     logging.info(f"Error code: {e}")
+                    raise Exception('An error occured while downloading weight file')
             self.model = load_model_unet(MODEL_PATH, device)
         else:
             if os.path.exists(model_path):
@@ -69,7 +69,7 @@ class LineSegmentation:
             numpy.ndarray: mask image has same size with original image
         """
         self.model.eval()
-        padding_pil_img, preprocessed_img, pad = self.preprocess(
+        padding_pil_img, preprocessed_img, pad = self._preprocess(
             img=img,
             scale=scale_factor,
         )
@@ -90,11 +90,11 @@ class LineSegmentation:
             probs = tf(probs.cpu())
             full_mask = probs.squeeze().cpu().numpy()
             mask = full_mask > out_threshold
-            mask = self.normalize(padding_pil_img, mask_img=mask)
+            mask = self._normalize(padding_pil_img, mask_img=mask)
             mask = np.array(mask[pad:-pad, pad:-pad])
             return mask
 
-    def preprocess(
+    def _preprocess(
         self,
         img: np.ndarray,
         scale: float,
@@ -125,15 +125,13 @@ class LineSegmentation:
         rz_pil_img = pil_img.resize((newW, newH))
         img_nd = np.array(rz_pil_img)
 
-        if len(img_nd.shape) == 2:
-            img_nd = np.expand_dims(img_nd, axis=2)
         # HWC to CHW
         img_trans = img_nd.transpose((2, 0, 1))
         if img_trans.max() > 1:
             img_trans = img_trans / 255
         return pil_img, img_trans, pad
 
-    def normalize(self, img: Image.Image, mask_img: np.ndarray) -> np.ndarray:
+    def _normalize(self, img: Image.Image, mask_img: np.ndarray) -> np.ndarray:
         """Convert shape of mask image to shape of img
 
         Args:

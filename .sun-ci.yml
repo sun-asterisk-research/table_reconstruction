@@ -14,7 +14,7 @@ jobs:
 
   - name: Lint and Test with Tox
     stage: Check source code 🔎
-    image: docker.io/niits/torch1.8.1-py38-cpu
+    image: docker.io/niits/torch1.8.1-py38-cpu:add-opencv2
     script:
       - pip3 install tox==3.24.3 virtualenv==20.7.2 opencv-python-headless==4.5.3.56
       - tox -v
