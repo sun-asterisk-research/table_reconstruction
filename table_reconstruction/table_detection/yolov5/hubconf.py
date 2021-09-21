@@ -1,5 +1,6 @@
-import torch
 from typing import Any, Union
+
+import torch
 
 
 def _create(
@@ -25,10 +26,8 @@ def _create(
     """
     from pathlib import Path
 
+    from models.experimental import attempt_load
     from models.yolo import Model
-    from models.experimental import (
-        attempt_load,
-    )
 
     file = Path(__file__).absolute()
 
@@ -73,6 +72,8 @@ def select_device(device: Union[str, Any] = "") -> torch.device:
     Returns:
         device (torch.device): selected device
     """
+    if not isinstance(device, str):
+        device = device.type
     cpu = device.lower() == "cpu"
     cuda = not cpu and torch.cuda.is_available()
     return torch.device("cuda:0" if cuda else "cpu")

@@ -1,14 +1,13 @@
-import os
 import logging
+import os
 from typing import Tuple
 
-import gdown
-import torch
-import numpy as np
 import cv2
-
-from torchvision import transforms
+import gdown
+import numpy as np
+import torch
 from PIL import Image
+from torchvision import transforms
 
 from .utils import load_model_unet
 
@@ -41,7 +40,7 @@ class LineSegmentation:
                 except Exception as e:
                     logging.info("Could not download weight, please try again!")
                     logging.info(f"Error code: {e}")
-                    raise Exception('An error occured while downloading weight file')
+                    raise Exception("An error occured while downloading weight file")
             self.model = load_model_unet(MODEL_PATH, device)
         else:
             if os.path.exists(model_path):
@@ -116,7 +115,7 @@ class LineSegmentation:
         h, w, _ = img.shape
         assert pad >= 0, "Pad must great than 0"
         padding_img = np.ones((h + pad * 2, w + pad * 2, 3), dtype=np.uint8) * 255
-        padding_img[pad: h + pad, pad: w + pad, :] = img
+        padding_img[pad : h + pad, pad : w + pad, :] = img
         pil_img = Image.fromarray(padding_img)
 
         # Resize

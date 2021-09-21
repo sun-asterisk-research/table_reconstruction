@@ -1,30 +1,30 @@
 # YOLOv5 YOLO-specific modules
 
 import logging
+import math
 import sys
 from copy import deepcopy
 
 import torch
 import torch.nn as nn
-import math
 
 from .common import (
-    Conv,
-    NMS,
-    Bottleneck,
-    SPP,
-    DWConv,
-    C3TR,
     C3,
-    Focus,
-    Contract,
-    Expand,
-    Concat,
+    C3TR,
+    NMS,
+    SPP,
+    Bottleneck,
     BottleneckCSP,
-    autoShape,
+    Concat,
+    Contract,
+    Conv,
+    DWConv,
+    Expand,
+    Focus,
     Path,
+    autoShape,
 )
-from .experimental import GhostConv, GhostBottleneck, CrossConv, MixConv2d
+from .experimental import CrossConv, GhostBottleneck, GhostConv, MixConv2d
 from .utils import (
     check_anchor_order,
     copy_attr,

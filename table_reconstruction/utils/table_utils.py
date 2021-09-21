@@ -1,4 +1,5 @@
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
+
 import numpy as np
 
 
@@ -111,7 +112,7 @@ def convertId2DocxCoord(cell_id: int, nb_col: int) -> Tuple[int, int]:
         nb_col (int): the number columns of table
 
     Returns:
-        tuple: the XY coordiante corresponding to the index of cell
+        tuple: the XY coordinate corresponding to the index of cell
     """
     x = cell_id % nb_col
     y = cell_id // nb_col
@@ -124,7 +125,7 @@ def convertSpanCell2DocxCoord(
     fake_cells: List[List],
     span_cell_ids: List,
     nb_col: int,
-    thresh: int = 5
+    thresh: int = 5,
 ) -> List[Dict]:
     """Find the XY coordinate of span cells
 
@@ -166,12 +167,9 @@ def convertSpanCell2DocxCoord(
             y_start_idx = min(y_start_idx, y)
             y_end_idx = max(y_end_idx, y)
 
-        if x_end_idx == x_start_idx and y_start_idx == y_end_idx:
-            continue
-
-        docx_coor['id'] = idx
-        docx_coor['x'] = [x_start_idx, x_end_idx]
-        docx_coor['y'] = [y_start_idx, y_end_idx]
+        docx_coor["id"] = idx
+        docx_coor["x"] = [x_start_idx, x_end_idx]
+        docx_coor["y"] = [y_start_idx, y_end_idx]
         docx_coords.append(docx_coor)
 
     return docx_coords

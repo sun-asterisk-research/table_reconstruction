@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 def normalize(img: np.ndarray, mask_img: np.ndarray) -> np.ndarray:

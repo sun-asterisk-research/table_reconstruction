@@ -60,7 +60,6 @@ source_suffix = {
 
 html_theme = "sphinx_rtd_theme"
 napoleon_include_init_with_doc = True
-autoclass_content = "both"
 autodoc_class_signature = "separated"
 add_function_parentheses = False
 add_module_names = False

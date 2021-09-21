@@ -147,3 +147,5 @@ cython_debug/
 table_reconstruction/__version__.py
 
 docs/source/_build
+
+tmp/

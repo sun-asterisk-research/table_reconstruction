@@ -4,10 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .common import (
-    Conv,
-    DWConv,
-)
+from .common import Conv, DWConv
 
 
 class CrossConv(nn.Module):
