@@ -6,3 +6,5 @@ torch==1.8.1
 torchvision==0.9.1
 gdown
 notebook
+scikit-image==0.18.3
+Shapely==1.7.1
