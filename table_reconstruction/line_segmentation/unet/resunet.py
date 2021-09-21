@@ -1,7 +1,7 @@
 from torch import nn
 from torch.nn.modules.batchnorm import BatchNorm2d
 
-from .unet_parts import Up, OutConv
+from .unet_parts import OutConv, Up
 
 
 def conv(ni, nf, ks=3, stride=1, act=True, bn=True):

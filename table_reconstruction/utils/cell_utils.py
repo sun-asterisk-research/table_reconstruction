@@ -1,13 +1,15 @@
-from typing import List, Tuple
-from shapely.geometry import LineString
-from .lines_utils import is_line
+from typing import List, Tuple, Union
+
 import numpy as np
+from shapely.geometry import LineString
+
+from .lines_utils import is_line
 
 
 def get_intersection_points(
-    horizontal_lines: List[List],
-    vertical_lines: List[List],
-    tab_coord: List
+    horizontal_lines: Union[List[List], np.ndarray],
+    vertical_lines: Union[List[List], np.ndarray],
+    tab_coord: List,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """This a function which find the coordinate (x, y) of intersection points
 
@@ -58,9 +60,7 @@ def get_intersection_points(
 
 
 def is_cell_existed(
-    cell_coord: List[List],
-    thresh: int = 15,
-    *lines: Tuple[List, ...]
+    cell_coord: List[List], thresh: int = 15, *lines: Tuple[List, ...]
 ) -> bool:
     """This is a function to check whether the coordinate is
     the coordinate of an existing cell or not.
@@ -96,9 +96,7 @@ def is_cell_existed(
 
 
 def get_bottom_right_corner(
-    pred_point: Tuple,
-    points: np.ndarray,
-    ths: int = 5
+    pred_point: Tuple, points: np.ndarray, ths: int = 5
 ) -> Tuple:
     """This is a function which find the coordinates of bottom right point of
     a cell by coordinate of top left point
@@ -128,10 +126,7 @@ def get_bottom_right_corner(
 
 
 def calculate_cell_coordinate(
-    points: np.ndarray,
-    fake_flag: bool,
-    ths: int = 15,
-    *lines: List
+    points: np.ndarray, fake_flag: bool, ths: int = 15, *lines: List
 ) -> List[List]:
     """This is a function which find the coordinate of cells in table
 
@@ -188,10 +183,7 @@ def calculate_cell_coordinate(
     return cells
 
 
-def sort_cell(
-    cells: np.ndarray,
-    ths: int = 5
-) -> List[List]:
+def sort_cell(cells: np.ndarray, ths: int = 5) -> List[List]:
     """Sort cells from left to right and top to bottom
 
     Args:

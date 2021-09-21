@@ -1,9 +1,9 @@
 import time
+from typing import List, Union
 
 import numpy as np
 import torch
 import torchvision
-from typing import Union, List
 
 
 def box_iou(box1: torch.Tensor, box2: torch.Tensor) -> torch.Tensor:

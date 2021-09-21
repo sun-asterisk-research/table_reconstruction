@@ -23,7 +23,7 @@ class Element:
 
         Args:
             coordinate (List[int, int, int, int]): A list that contains 4 integer
-            values ​​defined as x_min, x_max, y_min, y_max respectively
+                values ​​defined as x_min, x_max, y_min, y_max respectively
 
         Returns:
             bool: The return value. True for success, False otherwise.
@@ -63,7 +63,7 @@ class Element:
         self.coordinate[3] = value
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.coord})"
+        return f"{self.__class__.__name__}({self.coordinate})"
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.coord})"
+        return f"{self.__class__.__name__}({self.coordinate})"

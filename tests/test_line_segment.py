@@ -6,6 +6,7 @@ import shutil
 import table_reconstruction as tr
 from table_reconstruction.line_segmentation.line_segment import MODEL_PATH
 
+
 class TestLineSegmentation(unittest.TestCase):
     def test_load_model(self):
         # invalid weight file path

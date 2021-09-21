@@ -13,15 +13,15 @@ from PIL import Image
 from torch.cuda import amp
 
 from .utils import (
-    letterbox,
+    color_list,
     increment_path,
+    letterbox,
     make_divisible,
     non_max_suppression,
-    scale_coords,
-    xyxy2xywh,
-    color_list,
     plot_one_box,
+    scale_coords,
     time_synchronized,
+    xyxy2xywh,
 )
 
 

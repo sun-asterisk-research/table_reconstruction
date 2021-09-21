@@ -6,16 +6,15 @@ import re
 import subprocess
 import time
 from pathlib import Path
+from typing import Any, List, Tuple, Union
 
 import cv2
-import numpy as np
-
 import matplotlib
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
-from typing import List, Tuple, Union, Any
 
 
 def check_anchor_order(m):

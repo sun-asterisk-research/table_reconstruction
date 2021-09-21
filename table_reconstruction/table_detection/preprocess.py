@@ -1,7 +1,8 @@
+from typing import Any, List, Tuple, Union
+
 import cv2
 import numpy as np
 import torch
-from typing import Any, List, Tuple, Union
 
 
 def create_batch(

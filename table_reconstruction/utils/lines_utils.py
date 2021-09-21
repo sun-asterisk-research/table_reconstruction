@@ -1,16 +1,14 @@
 from typing import List, Tuple
-from skimage import measure
-from scipy.spatial import distance as dist
-import numpy as np
-from .mask_utils import get_hor_lines_mask, get_ver_lines_mask
+
 import cv2
+import numpy as np
+from scipy.spatial import distance as dist
+from skimage import measure
+
+from .mask_utils import get_hor_lines_mask, get_ver_lines_mask
 
 
-def get_table_line(
-    binimg: np.ndarray,
-    axis: int,
-    lineW: int = 5
-) -> List[List]:
+def get_table_line(binimg: np.ndarray, axis: int, lineW: int = 5) -> List[List]:
     """Extract the coordinate of lines from table binary image
 
     Args:
@@ -82,8 +80,14 @@ def solve(box: List) -> Tuple[int, int, int, int, int]:
     x1, y1, x2, y2, x3, y3, x4, y4 = box[:8]
     cx = (x1 + x3 + x2 + x4) / 4.0
     cy = (y1 + y3 + y4 + y2) / 4.0
-    w = (np.sqrt((x2 - x1)**2 + (y2 - y1)**2) + np.sqrt((x3 - x4)**2 + (y3 - y4)**2))/2
-    h = (np.sqrt((x2 - x3)**2 + (y2 - y3)**2) + np.sqrt((x1 - x4)**2 + (y1 - y4)**2))/2
+    w = (
+        np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        + np.sqrt((x3 - x4) ** 2 + (y3 - y4) ** 2)
+    ) / 2
+    h = (
+        np.sqrt((x2 - x3) ** 2 + (y2 - y3) ** 2)
+        + np.sqrt((x1 - x4) ** 2 + (y1 - y4) ** 2)
+    ) / 2
 
     sinA = (h * (x1 - cx) - w * (y1 - cy)) * 1.0 / (h * h + w * w) * 2
     angle = np.arcsin(sinA)
@@ -91,9 +95,7 @@ def solve(box: List) -> Tuple[int, int, int, int, int]:
     return angle, w, h, cx, cy
 
 
-def _order_points(
-    pts: np.ndarray
-) -> np.ndarray:
+def _order_points(pts: np.ndarray) -> np.ndarray:
     """Extract top left. top right, bottom left, bottom right of region
 
     Args:
@@ -132,11 +134,7 @@ def image_location_sort_box(box: List) -> List:
     return [x1, y1, x2, y2, x3, y3, x4, y4]
 
 
-def get_lines_coordinate(
-    line_mask: np.ndarray,
-    axis: int,
-    ths: int = 30
-) -> np.ndarray:
+def get_lines_coordinate(line_mask: np.ndarray, axis: int, ths: int = 30) -> np.ndarray:
     """Extract coordinate of line from  binary image
 
     Args:
@@ -169,10 +167,7 @@ def get_lines_coordinate(
     return np.array(lines_coordinate)
 
 
-def get_table_coordinate(
-    hor_lines: np.ndarray,
-    ver_lines: np.ndarray
-) -> List:
+def get_table_coordinate(hor_lines: np.ndarray, ver_lines: np.ndarray) -> List:
     """Extract the coordinate of table in image
 
     Args:
@@ -195,7 +190,7 @@ def remove_noise(
     hor_lines: np.ndarray,
     ver_lines: np.ndarray,
     ths: int = 15,
-    noise_edge_ths: float = 0.5
+    noise_edge_ths: float = 0.5,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Remove noise edge from image
 
@@ -270,9 +265,7 @@ def remove_noise(
 
 
 def get_coordinates(
-    mask: np.ndarray,
-    ths: int = 5,
-    kernel_len: int = 10
+    mask: np.ndarray, ths: int = 5, kernel_len: int = 10
 ) -> Tuple[List, np.ndarray, np.ndarray]:
     """This function extract the coordinate of table, horizontal and vertical lines.
 
@@ -282,6 +275,10 @@ def get_coordinates(
         has not same y coordinate for horizontal lines or x coordinate
         for vertical lines. Defaults to 5.
         kernel_len (int, optional): The size of kernel is applied.
+
+    Raises:
+        ValueError: will be raised if the number of detected lines is not enough to
+            rebuild the table
 
     Returns:
         Tuple[List, np.ndarray, np.ndarray]: Tuple contain the coordinate of
@@ -298,6 +295,8 @@ def get_coordinates(
     hor_lines = get_lines_coordinate(horizontal_lines_mask, axis=0, ths=ths)
     ver_lines = get_lines_coordinate(vertical_lines_mask, axis=1, ths=ths)
 
+    if len(hor_lines.shape) != 2 or len(ver_lines.shape) != 2:
+        raise ValueError("Empty line coords array")
     # remove noise edge
     hor_lines, ver_lines = remove_noise(hor_lines, ver_lines, ths)
 
@@ -335,11 +334,7 @@ def get_coordinates(
     return [tab_x1, tab_y1, tab_x2, tab_y2], final_ver_lines, final_hor_lines
 
 
-def normalize_v1(
-    lines: List[List],
-    axis: int,
-    ths: int = 10
-) -> np.ndarray:
+def normalize_v1(lines: List[List], axis: int, ths: int = 10) -> np.ndarray:
     """Normalize the coordinate of vertical lines or horizontal lines
 
     Args:
@@ -416,10 +411,9 @@ def normalize_v1(
 
 
 def normalize_v2(
-    ver_lines: np.ndarray,
-    hor_lines: np.ndarray
+    ver_lines: np.ndarray, hor_lines: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """ Normalize the coordinate between vertical lines and horizontal lines
+    """Normalize the coordinate between vertical lines and horizontal lines
 
     Args:
         ver_lines_coord (np.ndarray): The coordinate of vertical lines
@@ -492,12 +486,7 @@ def normalize_v2(
     return hor_lines, ver_lines
 
 
-def is_line(
-    line: List,
-    lines: np.ndarray,
-    axis: int,
-    ths: float
-) -> bool:
+def is_line(line: List, lines: np.ndarray, axis: int, ths: float) -> bool:
     """Check whether the coordinate is the coordinate of an existing line or not.
 
     Args:
