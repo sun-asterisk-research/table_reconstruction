@@ -8,9 +8,9 @@ from copy import deepcopy
 import torch
 import torch.nn as nn
 
+from pathlib import Path
 from .common import (
     C3,
-    C3TR,
     NMS,
     SPP,
     Bottleneck,
@@ -21,17 +21,14 @@ from .common import (
     DWConv,
     Expand,
     Focus,
-    Path,
     autoShape,
 )
-from .experimental import CrossConv, GhostBottleneck, GhostConv, MixConv2d
 from .utils import (
     check_anchor_order,
     copy_attr,
     fuse_conv_and_bn,
     initialize_weights,
     make_divisible,
-    scale_img,
 )
 
 sys.path.append("./")  # to run '$ python *.py' files in subdirectories
@@ -138,23 +135,7 @@ class Model(nn.Module):
         logger.info("")
 
     def forward(self, x, augment=False, profile=False):
-        if augment:
-            img_size = x.shape[-2:]  # height, width
-            s = [1, 0.83, 0.67]  # scales
-            f = [None, 3, None]  # flips (2-ud, 3-lr)
-            y = []  # outputs
-            for si, fi in zip(s, f):
-                xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
-                yi = self.forward_once(xi)[0]  # forward
-                yi[..., :4] /= si  # de-scale
-                if fi == 2:
-                    yi[..., 1] = img_size[0] - yi[..., 1]  # de-flip ud
-                elif fi == 3:
-                    yi[..., 0] = img_size[1] - yi[..., 0]  # de-flip lr
-                y.append(yi)
-            return torch.cat(y, 1), None  # augmented inference, train
-        else:
-            return self.forward_once(x, profile)  # single-scale inference, train
+        return self.forward_once(x, profile)  # single-scale inference, train
 
     def forward_once(self, x, profile=False):
         y, dt = [], []  # outputs
@@ -259,24 +240,19 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         n = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in [
             Conv,
-            GhostConv,
             Bottleneck,
-            GhostBottleneck,
             SPP,
             DWConv,
-            MixConv2d,
             Focus,
-            CrossConv,
             BottleneckCSP,
             C3,
-            C3TR,
         ]:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
 
             args = [c1, c2, *args[1:]]
-            if m in [BottleneckCSP, C3, C3TR]:
+            if m in [BottleneckCSP, C3]:
                 args.insert(2, n)  # number of repeats
                 n = 1
         elif m is nn.BatchNorm2d:
