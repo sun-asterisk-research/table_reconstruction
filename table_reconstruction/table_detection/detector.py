@@ -6,12 +6,13 @@ from typing import List
 import numpy as np
 import torch
 
-from .postprocess import non_max_suppression, scale_coords
+from .yolov5.models.utils import non_max_suppression, scale_coords
 from .preprocess import create_batch, process_image
 from .utils import DETECTOR_WEIGHT_URL, download_weight, load_yolo_model, select_device
 from .yolov5.models.utils import letterbox
 
-MODEL_PATH = os.path.dirname(os.path.abspath(__file__)) + "/tmp/model_table_detect.pt"
+DIR_PATH = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = DIR_PATH + "/tmp/model_table_detect.pt"
 
 
 class TableDetector:
@@ -37,15 +38,15 @@ class TableDetector:
         if model_path is None:
             if not os.path.exists(MODEL_PATH):
                 logging.info("Obtain weights of model ...")
-                dir_path = os.path.dirname(os.path.abspath(__file__))
-                if not os.path.exists(dir_path + "/tmp/"):
-                    os.mkdir(dir_path + "/tmp/")
+                if not os.path.exists(DIR_PATH + "/tmp/"):
+                    os.mkdir(DIR_PATH + "/tmp/")
                 try:
                     logging.info("Downloading weight from google drive")
                     download_weight(DETECTOR_WEIGHT_URL, output=MODEL_PATH),
                 except Exception as e:
                     logging.info("Could not download weight, please try again!")
                     logging.info(f"Error code: {e}")
+                    raise Exception("An error occured while downloading weight file")
             self.model, self.stride = load_yolo_model(MODEL_PATH, device=device)
         else:
             if os.path.exists(model_path):
@@ -54,7 +55,7 @@ class TableDetector:
                 raise ValueError(f"Could not find weights file at {model_path}")
 
         self.device = select_device(device)
-        print("Using {} for table detection".format(self.device))
+        logging.info("Using {} for table detection".format(self.device))
 
         self.img_size = 640
         self.conf_thres = conf_thres
