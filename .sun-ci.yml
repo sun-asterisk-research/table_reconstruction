@@ -1,0 +1,95 @@
+workspace: true
+
+stages:
+  - Check source code 🔎
+  - Build and release 📦
+
+jobs:
+  - name: Check code format with flake8
+    stage: Check source code 🔎
+    image: python:3.6
+    script:
+      - pip3 install flake8==3.9.2
+      - flake8 table_reconstruction
+
+  - name: Lint and Test with Tox
+    stage: Check source code 🔎
+    image: docker.io/niits/torch1.8.1-py38-cpu:add-opencv2
+    script:
+      - pip3 install tox==3.24.3 virtualenv==20.7.2 opencv-python-headless==4.5.3.56
+      - tox -v
+    coverage:
+      type: cobertura
+      path: coverage.xml
+    artifacts:
+      name: coverage
+      paths:
+        - htmlcov
+      expires_in: 3 days
+    except:
+      messages:
+        - '/\[ci skip ci\]/'
+
+  - name: Check Typing with mypy
+    stage: Check source code 🔎
+    image: python:3
+    script:
+      - pip3 install mypy==0.910 types-setuptools==57.4.0 opencv-python-headless==4.5.3.56
+      - python3 setup.py develop
+      - mypy table_reconstruction --install-types --non-interactive --ignore-missing-imports
+    allow_failure: true
+    except:
+      messages:
+        - '/\[ci skip ci\]/'
+
+  - name: Generate document
+    stage: Build and release 📦
+    image: python:3
+    script:
+      - pip3 install sphinx==4.2.0 sphinx-rtd-theme==1.0.0 myst_parser==0.15.2
+      - python3 setup.py develop
+      - find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
+      - sphinx-apidoc -o docs/source  table_reconstruction --follow-links
+      - sphinx-build docs/source docs/build/html
+    artifacts:
+      name: docs
+      paths:
+        - docs/build/html
+      expires_in: 14 days
+    only:
+      branches:
+        - master
+      events:
+        - push
+
+  - name: Build Snapshot
+    workspace: shared
+    stage: Build and release 📦
+    image: python:3
+    script:
+      - python3 setup.py bdist_wheel sdist
+    artifacts:
+      name: dist
+      paths:
+        - dist
+      expires_in: 14 days
+    only:
+      branches:
+        - master
+
+  - name: Push to PyPI
+    workspace: shared
+    stage: Build and release 📦
+    image: python:3
+    script:
+      - pip3 install twine
+      - python3 -m twine upload dist/* \
+        --repository table_reconstruction   \
+        --verbose -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD}  \
+        --repository-url https://upload.pypi.org/legacy/ \
+        --non-interactive
+    only:
+      branches:
+        - master
+      events:
+        - push

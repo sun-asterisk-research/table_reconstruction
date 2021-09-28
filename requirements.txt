@@ -1,0 +1,11 @@
+numpy>=1.18.5
+Pillow>=8.2.0
+fastai==2.3.1
+opencv_python>=4.1.2.30
+torch==1.8.1
+torchvision==0.9.1
+gdown
+notebook
+scikit-image==0.18.3
+Shapely==1.7.1
+scikit-build>=0.12.0
