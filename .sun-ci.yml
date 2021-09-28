@@ -1,5 +1,3 @@
-workspace: true
-
 stages:
   - Check source code 🔎
   - Build and release 📦
@@ -68,26 +66,18 @@ jobs:
     image: python:3
     script:
       - python3 setup.py bdist_wheel sdist
-    artifacts:
-      name: dist
-      paths:
-        - dist
-      expires_in: 14 days
-    only:
-      branches:
-        - master
-
-  - name: Push to PyPI
-    workspace: shared
-    stage: Build and release 📦
-    image: python:3
-    script:
       - pip3 install twine
       - python3 -m twine upload dist/* \
         --repository table_reconstruction   \
         --verbose -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD}  \
         --repository-url https://upload.pypi.org/legacy/ \
         --non-interactive
+    artifacts:
+      name: dist
+      paths:
+        - dist
+      expires_in: 14 days
+
     only:
       branches:
         - master
