@@ -8,3 +8,4 @@ gdown
 notebook
 scikit-image==0.18.3
 Shapely==1.7.1
+scikit-build>=0.12.0
