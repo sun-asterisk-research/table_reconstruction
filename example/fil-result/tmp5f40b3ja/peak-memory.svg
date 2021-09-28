@@ -1,0 +1,2494 @@
+<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg version="1.1" width="1200" height="1028" onload="init(evt)" viewBox="0 0 1200 1028" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:fg="http://github.com/jonhoo/inferno">
+    <!--Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples.-->
+    <!--NOTES: -->
+    <defs>
+        <linearGradient id="background" y1="0" y2="1" x1="0" x2="0">
+            <stop stop-color="#eeeeee" offset="5%"/>
+            <stop stop-color="#eeeeb0" offset="95%"/>
+        </linearGradient>
+    </defs>
+    <style type="text/css">
+text { font-family:"monospace"; font-size:16px; fill:rgb(0,0,0); }
+#title { text-anchor:middle; font-size:21px; }
+#search { opacity:0.1; cursor:pointer; }
+#search:hover, #search.show { opacity:1; }
+#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+#unzoom { cursor:pointer; }
+#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+.hide { display:none; }
+.parent { opacity:0.5; }
+</style>
+    <script type="text/ecmascript"><![CDATA[
+        var nametype = 'Function:';
+        var fontsize = 16;
+        var fontwidth = 0.59;
+        var xpad = 10;
+        var inverted = true;
+        var searchcolor = 'rgb(230,0,230)';
+        var fluiddrawing = true;
+        var truncate_text_right = false;
+    ]]><![CDATA["use strict";
+var details, searchbtn, unzoombtn, matchedtxt, svg, searching, frames;
+function init(evt) {
+    details = document.getElementById("details").firstChild;
+    searchbtn = document.getElementById("search");
+    unzoombtn = document.getElementById("unzoom");
+    matchedtxt = document.getElementById("matched");
+    svg = document.getElementsByTagName("svg")[0];
+    frames = document.getElementById("frames");
+    total_samples = parseInt(frames.attributes.total_samples.value);
+    searching = 0;
+
+    // Use GET parameters to restore a flamegraph's state.
+    var restore_state = function() {
+        var params = get_params();
+        if (params.x && params.y)
+            zoom(find_group(document.querySelector('[*|x="' + params.x + '"][y="' + params.y + '"]')));
+        if (params.s)
+            search(params.s);
+    };
+
+    if (fluiddrawing) {
+        // Make width dynamic so the SVG fits its parent's width.
+        svg.removeAttribute("width");
+        // Edge requires us to have a viewBox that gets updated with size changes.
+        var isEdge = /Edge\/\d./i.test(navigator.userAgent);
+        if (!isEdge) {
+          svg.removeAttribute("viewBox");
+        }
+        var update_for_width_change = function() {
+            if (isEdge) {
+                svg.attributes.viewBox.value = "0 0 " + svg.width.baseVal.value + " " + svg.height.baseVal.value;
+            }
+
+            // Keep consistent padding on left and right of frames container.
+            frames.attributes.width.value = svg.width.baseVal.value - xpad * 2;
+
+            // Text truncation needs to be adjusted for the current width.
+            var el = frames.children;
+            for(var i = 0; i < el.length; i++) {
+                update_text(el[i]);
+            }
+
+            // Keep search elements at a fixed distance from right edge.
+            var svgWidth = svg.width.baseVal.value;
+            searchbtn.attributes.x.value = svgWidth - xpad - 100;
+            matchedtxt.attributes.x.value = svgWidth - xpad - 100;
+        };
+        window.addEventListener('resize', function() {
+            update_for_width_change();
+        });
+        // This needs to be done asynchronously for Safari to work.
+        setTimeout(function() {
+            unzoom();
+            update_for_width_change();
+            restore_state();
+        }, 0);
+    } else {
+        restore_state();
+    }
+}
+// event listeners
+window.addEventListener("click", function(e) {
+    var target = find_group(e.target);
+    if (target) {
+        if (target.nodeName == "a") {
+            if (e.ctrlKey === false) return;
+            e.preventDefault();
+        }
+        if (target.classList.contains("parent")) unzoom();
+        zoom(target);
+
+        // set parameters for zoom state
+        var el = target.querySelector("rect");
+        if (el && el.attributes && el.attributes.y && el.attributes["fg:x"]) {
+            var params = get_params()
+            params.x = el.attributes["fg:x"].value;
+            params.y = el.attributes.y.value;
+            history.replaceState(null, null, parse_params(params));
+        }
+    }
+    else if (e.target.id == "unzoom") {
+        unzoom();
+
+        // remove zoom state
+        var params = get_params();
+        if (params.x) delete params.x;
+        if (params.y) delete params.y;
+        history.replaceState(null, null, parse_params(params));
+    }
+    else if (e.target.id == "search") search_prompt();
+}, false)
+// mouse-over for info
+// show
+window.addEventListener("mouseover", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = nametype + " " + g_to_text(target);
+}, false)
+// clear
+window.addEventListener("mouseout", function(e) {
+    var target = find_group(e.target);
+    if (target) details.nodeValue = ' ';
+}, false)
+// ctrl-F for search
+window.addEventListener("keydown",function (e) {
+    if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+        e.preventDefault();
+        search_prompt();
+    }
+}, false)
+// functions
+function get_params() {
+    var params = {};
+    var paramsarr = window.location.search.substr(1).split('&');
+    for (var i = 0; i < paramsarr.length; ++i) {
+        var tmp = paramsarr[i].split("=");
+        if (!tmp[0] || !tmp[1]) continue;
+        params[tmp[0]]  = decodeURIComponent(tmp[1]);
+    }
+    return params;
+}
+function parse_params(params) {
+    var uri = "?";
+    for (var key in params) {
+        uri += key + '=' + encodeURIComponent(params[key]) + '&';
+    }
+    if (uri.slice(-1) == "&")
+        uri = uri.substring(0, uri.length - 1);
+    if (uri == '?')
+        uri = window.location.href.split('?')[0];
+    return uri;
+}
+function find_child(node, selector) {
+    var children = node.querySelectorAll(selector);
+    if (children.length) return children[0];
+    return;
+}
+function find_group(node) {
+    var parent = node.parentElement;
+    if (!parent) return;
+    if (parent.id == "frames") return node;
+    return find_group(parent);
+}
+function orig_save(e, attr, val) {
+    if (e.attributes["fg:orig_" + attr] != undefined) return;
+    if (e.attributes[attr] == undefined) return;
+    if (val == undefined) val = e.attributes[attr].value;
+    e.setAttribute("fg:orig_" + attr, val);
+}
+function orig_load(e, attr) {
+    if (e.attributes["fg:orig_"+attr] == undefined) return;
+    e.attributes[attr].value = e.attributes["fg:orig_" + attr].value;
+    e.removeAttribute("fg:orig_" + attr);
+}
+function g_to_text(e) {
+    var text = find_child(e, "title").firstChild.nodeValue;
+    return (text)
+}
+function g_to_func(e) {
+    var func = g_to_text(e);
+    // if there's any manipulation we want to do to the function
+    // name before it's searched, do it here before returning.
+    return (func);
+}
+function update_text(e) {
+    var r = find_child(e, "rect");
+    var t = find_child(e, "text");
+    var w = parseFloat(r.attributes.width.value) * frames.attributes.width.value / 100 - 3;
+    var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+    t.attributes.x.value = format_percent((parseFloat(r.attributes.x.value) + (100 * 3 / frames.attributes.width.value)));
+    // Smaller than this size won't fit anything
+    if (w < 2 * fontsize * fontwidth) {
+        t.textContent = "";
+        return;
+    }
+    t.textContent = txt;
+    // Fit in full text width
+    if (/^ *\$/.test(txt) || t.getComputedTextLength() < w)
+        return;
+    if (truncate_text_right) {
+        // Truncate the right side of the text.
+        for (var x = txt.length - 2; x > 0; x--) {
+            if (t.getSubStringLength(0, x + 2) <= w) {
+                t.textContent = txt.substring(0, x) + "..";
+                return;
+            }
+        }
+    } else {
+        // Truncate the left side of the text.
+        for (var x = 2; x < txt.length; x++) {
+            if (t.getSubStringLength(x - 2, txt.length) <= w) {
+                t.textContent = ".." + txt.substring(x, txt.length);
+                return;
+            }
+        }
+    }
+    t.textContent = "";
+}
+// zoom
+function zoom_reset(e) {
+    if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * parseInt(e.attributes["fg:x"].value) / total_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / total_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_reset(c[i]);
+    }
+}
+function zoom_child(e, x, zoomed_width_samples) {
+    if (e.tagName == "text") {
+        var parent_x = parseFloat(find_child(e.parentNode, "rect[x]").attributes.x.value);
+        e.attributes.x.value = format_percent(parent_x + (100 * 3 / frames.attributes.width.value));
+    } else if (e.tagName == "rect") {
+        e.attributes.x.value = format_percent(100 * (parseInt(e.attributes["fg:x"].value) - x) / zoomed_width_samples);
+        e.attributes.width.value = format_percent(100 * parseInt(e.attributes["fg:w"].value) / zoomed_width_samples);
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_child(c[i], x, zoomed_width_samples);
+    }
+}
+function zoom_parent(e) {
+    if (e.attributes) {
+        if (e.attributes.x != undefined) {
+            e.attributes.x.value = "0.0%";
+        }
+        if (e.attributes.width != undefined) {
+            e.attributes.width.value = "100.0%";
+        }
+    }
+    if (e.childNodes == undefined) return;
+    for(var i = 0, c = e.childNodes; i < c.length; i++) {
+        zoom_parent(c[i]);
+    }
+}
+function zoom(node) {
+    var attr = find_child(node, "rect").attributes;
+    var width = parseInt(attr["fg:w"].value);
+    var xmin = parseInt(attr["fg:x"].value);
+    var xmax = xmin + width;
+    var ymin = parseFloat(attr.y.value);
+    unzoombtn.classList.remove("hide");
+    var el = frames.children;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        var a = find_child(e, "rect").attributes;
+        var ex = parseInt(a["fg:x"].value);
+        var ew = parseInt(a["fg:w"].value);
+        // Is it an ancestor
+        if (!inverted) {
+            var upstack = parseFloat(a.y.value) > ymin;
+        } else {
+            var upstack = parseFloat(a.y.value) < ymin;
+        }
+        if (upstack) {
+            // Direct ancestor
+            if (ex <= xmin && (ex+ew) >= xmax) {
+                e.classList.add("parent");
+                zoom_parent(e);
+                update_text(e);
+            }
+            // not in current path
+            else
+                e.classList.add("hide");
+        }
+        // Children maybe
+        else {
+            // no common path
+            if (ex < xmin || ex >= xmax) {
+                e.classList.add("hide");
+            }
+            else {
+                zoom_child(e, xmin, width);
+                update_text(e);
+            }
+        }
+    }
+}
+function unzoom() {
+    unzoombtn.classList.add("hide");
+    var el = frames.children;
+    for(var i = 0; i < el.length; i++) {
+        el[i].classList.remove("parent");
+        el[i].classList.remove("hide");
+        zoom_reset(el[i]);
+        update_text(el[i]);
+    }
+}
+// search
+function reset_search() {
+    var el = document.querySelectorAll("#frames rect");
+    for (var i = 0; i < el.length; i++) {
+        orig_load(el[i], "fill")
+    }
+    var params = get_params();
+    delete params.s;
+    history.replaceState(null, null, parse_params(params));
+}
+function search_prompt() {
+    if (!searching) {
+        var term = prompt("Enter a search term (regexp " +
+            "allowed, eg: ^ext4_)", "");
+        if (term != null) {
+            search(term)
+        }
+    } else {
+        reset_search();
+        searching = 0;
+        searchbtn.classList.remove("show");
+        searchbtn.firstChild.nodeValue = "Search"
+        matchedtxt.classList.add("hide");
+        matchedtxt.firstChild.nodeValue = ""
+    }
+}
+function search(term) {
+    var re = new RegExp(term);
+    var el = frames.children;
+    var matches = new Object();
+    var maxwidth = 0;
+    for (var i = 0; i < el.length; i++) {
+        var e = el[i];
+        // Skip over frames which are either not visible, or below the zoomed-to frame
+        if (e.classList.contains("hide") || e.classList.contains("parent")) {
+            continue;
+        }
+        var func = g_to_func(e);
+        var rect = find_child(e, "rect");
+        if (func == null || rect == null)
+            continue;
+        // Save max width. Only works as we have a root frame
+        var w = parseInt(rect.attributes["fg:w"].value);
+        if (w > maxwidth)
+            maxwidth = w;
+        if (func.match(re)) {
+            // highlight
+            var x = parseInt(rect.attributes["fg:x"].value);
+            orig_save(rect, "fill");
+            rect.attributes.fill.value = searchcolor;
+            // remember matches
+            if (matches[x] == undefined) {
+                matches[x] = w;
+            } else {
+                if (w > matches[x]) {
+                    // overwrite with parent
+                    matches[x] = w;
+                }
+            }
+            searching = 1;
+        }
+    }
+    if (!searching)
+        return;
+    var params = get_params();
+    params.s = term;
+    history.replaceState(null, null, parse_params(params));
+
+    searchbtn.classList.add("show");
+    searchbtn.firstChild.nodeValue = "Reset Search";
+    // calculate percent matched, excluding vertical overlap
+    var count = 0;
+    var lastx = -1;
+    var lastw = 0;
+    var keys = Array();
+    for (k in matches) {
+        if (matches.hasOwnProperty(k))
+            keys.push(k);
+    }
+    // sort the matched frames by their x location
+    // ascending, then width descending
+    keys.sort(function(a, b){
+        return a - b;
+    });
+    // Step through frames saving only the biggest bottom-up frames
+    // thanks to the sort order. This relies on the tree property
+    // where children are always smaller than their parents.
+    for (var k in keys) {
+        var x = parseInt(keys[k]);
+        var w = matches[keys[k]];
+        if (x >= lastx + lastw) {
+            count += w;
+            lastx = x;
+            lastw = w;
+        }
+    }
+    // display matched percent
+    matchedtxt.classList.remove("hide");
+    var pct = 100 * count / maxwidth;
+    if (pct != 100) pct = pct.toFixed(1);
+    matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+}
+function format_percent(n) {
+    return n.toFixed(4) + "%";
+}
+]]></script>
+    <rect x="0" y="0" width="100%" height="1028" fill="url(#background)"/>
+    <text id="title" x="50.0000%" y="32.00">Peak Tracked Memory Usage (281.0 MiB)</text>
+    <text id="subtitle" x="50.0000%" y="64.00">Made with the Fil memory profiler. <a href="https://pythonspeed.com/fil/" style="text-decoration: underline;" target="_parent">Try it on your code!</a></text>
+    <text id="details" x="10" y="84.00"> </text>
+    <text id="unzoom" class="hide" x="10" y="32.00">Reset Zoom</text>
+    <text id="search" x="1090" y="32.00">Search</text>
+    <text id="matched" x="1090" y="1015.00"> </text>
+    <svg id="frames" x="10" width="1180" total_samples="294580715">
+        <g>
+            <title>&lt;frozen importlib._bootstrap_external&gt;:724 (exec_module) (45,381 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="342" width="0.0154%" height="21" fill="rgb(255,248,248)" fg:x="0" fg:w="45381"/>
+            <text x="0.2500%" y="355.50"></text>
+        </g>
+        <g>
+            <title> (45,381 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="364" width="0.0154%" height="21" fill="rgb(255,248,248)" fg:x="0" fg:w="45381"/>
+            <text x="0.2500%" y="377.50"></text>
+        </g>
+        <g>
+            <title>&lt;frozen importlib._bootstrap_external&gt;:857 (get_code) (45,381 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="386" width="0.0154%" height="21" fill="rgb(255,248,248)" fg:x="0" fg:w="45381"/>
+            <text x="0.2500%" y="399.50"></text>
+        </g>
+        <g>
+            <title> (45,381 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="408" width="0.0154%" height="21" fill="rgb(255,248,248)" fg:x="0" fg:w="45381"/>
+            <text x="0.2500%" y="421.50"></text>
+        </g>
+        <g>
+            <title>&lt;frozen importlib._bootstrap_external&gt;:525 (_compile_bytecode) (45,381 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="430" width="0.0154%" height="21" fill="rgb(255,248,248)" fg:x="0" fg:w="45381"/>
+            <text x="0.2500%" y="443.50"></text>
+        </g>
+        <g>
+            <title> (45,381 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="452" width="0.0154%" height="21" fill="rgb(255,248,248)" fg:x="0" fg:w="45381"/>
+            <text x="0.2500%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/filprofiler/_tracer.py:156 (disable_thread_pools) (72,242 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="166" width="0.0245%" height="21" fill="rgb(255,247,247)" fg:x="0" fg:w="72242"/>
+            <text x="0.2500%" y="179.50"></text>
+        </g>
+        <g>
+            <title>    import threadpoolctl (72,242 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="188" width="0.0245%" height="21" fill="rgb(255,247,247)" fg:x="0" fg:w="72242"/>
+            <text x="0.2500%" y="201.50"></text>
+        </g>
+        <g>
+            <title>&lt;frozen importlib._bootstrap&gt;:983 (_find_and_load) (72,242 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="210" width="0.0245%" height="21" fill="rgb(255,247,247)" fg:x="0" fg:w="72242"/>
+            <text x="0.2500%" y="223.50"></text>
+        </g>
+        <g>
+            <title> (72,242 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="232" width="0.0245%" height="21" fill="rgb(255,247,247)" fg:x="0" fg:w="72242"/>
+            <text x="0.2500%" y="245.50"></text>
+        </g>
+        <g>
+            <title>&lt;frozen importlib._bootstrap&gt;:967 (_find_and_load_unlocked) (72,242 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="254" width="0.0245%" height="21" fill="rgb(255,247,247)" fg:x="0" fg:w="72242"/>
+            <text x="0.2500%" y="267.50"></text>
+        </g>
+        <g>
+            <title> (72,242 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="276" width="0.0245%" height="21" fill="rgb(255,247,247)" fg:x="0" fg:w="72242"/>
+            <text x="0.2500%" y="289.50"></text>
+        </g>
+        <g>
+            <title>&lt;frozen importlib._bootstrap&gt;:677 (_load_unlocked) (72,242 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="298" width="0.0245%" height="21" fill="rgb(255,247,247)" fg:x="0" fg:w="72242"/>
+            <text x="0.2500%" y="311.50"></text>
+        </g>
+        <g>
+            <title> (72,242 bytes, 0.02%)</title>
+            <rect x="0.0000%" y="320" width="0.0245%" height="21" fill="rgb(255,247,247)" fg:x="0" fg:w="72242"/>
+            <text x="0.2500%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:397 (match_module_callback) (41,002 bytes, 0.01%)</title>
+            <rect x="0.0269%" y="430" width="0.0139%" height="21" fill="rgb(255,248,248)" fg:x="79309" fg:w="41002"/>
+            <text x="0.2769%" y="443.50"></text>
+        </g>
+        <g>
+            <title>                filepath = filepath.decode(&quot;utf-8&quot;) (41,002 bytes, 0.01%)</title>
+            <rect x="0.0269%" y="452" width="0.0139%" height="21" fill="rgb(255,248,248)" fg:x="79309" fg:w="41002"/>
+            <text x="0.2769%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:575 (_realpath) (41,601 bytes, 0.01%)</title>
+            <rect x="0.0408%" y="518" width="0.0141%" height="21" fill="rgb(255,248,248)" fg:x="120311" fg:w="41601"/>
+            <text x="0.2908%" y="531.50"></text>
+        </g>
+        <g>
+            <title>            rpath = os.path.realpath(filepath) (41,601 bytes, 0.01%)</title>
+            <rect x="0.0408%" y="540" width="0.0141%" height="21" fill="rgb(255,248,248)" fg:x="120311" fg:w="41601"/>
+            <text x="0.2908%" y="553.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/posixpath.py:389 (realpath) (40,577 bytes, 0.01%)</title>
+            <rect x="0.0412%" y="562" width="0.0138%" height="21" fill="rgb(255,248,248)" fg:x="121335" fg:w="40577"/>
+            <text x="0.2912%" y="575.50"></text>
+        </g>
+        <g>
+            <title>    return abspath(path) (40,577 bytes, 0.01%)</title>
+            <rect x="0.0412%" y="584" width="0.0138%" height="21" fill="rgb(255,248,248)" fg:x="121335" fg:w="40577"/>
+            <text x="0.2912%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/posixpath.py:378 (abspath) (40,577 bytes, 0.01%)</title>
+            <rect x="0.0412%" y="606" width="0.0138%" height="21" fill="rgb(255,248,248)" fg:x="121335" fg:w="40577"/>
+            <text x="0.2912%" y="619.50"></text>
+        </g>
+        <g>
+            <title>    return normpath(path) (40,577 bytes, 0.01%)</title>
+            <rect x="0.0412%" y="628" width="0.0138%" height="21" fill="rgb(255,248,248)" fg:x="121335" fg:w="40577"/>
+            <text x="0.2912%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/posixpath.py:365 (normpath) (40,577 bytes, 0.01%)</title>
+            <rect x="0.0412%" y="650" width="0.0138%" height="21" fill="rgb(255,248,248)" fg:x="121335" fg:w="40577"/>
+            <text x="0.2912%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        path = sep*initial_slashes + path (40,577 bytes, 0.01%)</title>
+            <rect x="0.0412%" y="672" width="0.0138%" height="21" fill="rgb(255,248,248)" fg:x="121335" fg:w="40577"/>
+            <text x="0.2912%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:492 (_make_module_from_path) (50,849 bytes, 0.02%)</title>
+            <rect x="0.0408%" y="474" width="0.0173%" height="21" fill="rgb(255,248,248)" fg:x="120311" fg:w="50849"/>
+            <text x="0.2908%" y="487.50"></text>
+        </g>
+        <g>
+            <title>        filepath = self._realpath(filepath) (50,849 bytes, 0.02%)</title>
+            <rect x="0.0408%" y="496" width="0.0173%" height="21" fill="rgb(255,248,248)" fg:x="120311" fg:w="50849"/>
+            <text x="0.2908%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:269 (_set_threadpool_limits) (111,659 bytes, 0.04%)</title>
+            <rect x="0.0248%" y="254" width="0.0379%" height="21" fill="rgb(255,247,247)" fg:x="73154" fg:w="111659"/>
+            <text x="0.2748%" y="267.50"></text>
+        </g>
+        <g>
+            <title>                                  user_api=self._user_api) (111,659 bytes, 0.04%)</title>
+            <rect x="0.0248%" y="276" width="0.0379%" height="21" fill="rgb(255,247,247)" fg:x="73154" fg:w="111659"/>
+            <text x="0.2748%" y="289.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:340 (__init__) (111,659 bytes, 0.04%)</title>
+            <rect x="0.0248%" y="298" width="0.0379%" height="21" fill="rgb(255,247,247)" fg:x="73154" fg:w="111659"/>
+            <text x="0.2748%" y="311.50"></text>
+        </g>
+        <g>
+            <title>            self._load_modules() (111,659 bytes, 0.04%)</title>
+            <rect x="0.0248%" y="320" width="0.0379%" height="21" fill="rgb(255,247,247)" fg:x="73154" fg:w="111659"/>
+            <text x="0.2748%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:375 (_load_modules) (111,659 bytes, 0.04%)</title>
+            <rect x="0.0248%" y="342" width="0.0379%" height="21" fill="rgb(255,247,247)" fg:x="73154" fg:w="111659"/>
+            <text x="0.2748%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            self._find_modules_with_dl_iterate_phdr() (111,659 bytes, 0.04%)</title>
+            <rect x="0.0248%" y="364" width="0.0379%" height="21" fill="rgb(255,247,247)" fg:x="73154" fg:w="111659"/>
+            <text x="0.2748%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:409 (_find_modules_with_dl_iterate_phdr) (105,504 bytes, 0.04%)</title>
+            <rect x="0.0269%" y="386" width="0.0358%" height="21" fill="rgb(255,247,247)" fg:x="79309" fg:w="105504"/>
+            <text x="0.2769%" y="399.50"></text>
+        </g>
+        <g>
+            <title>        libc.dl_iterate_phdr(c_match_module_callback, data) (105,504 bytes, 0.04%)</title>
+            <rect x="0.0269%" y="408" width="0.0358%" height="21" fill="rgb(255,247,247)" fg:x="79309" fg:w="105504"/>
+            <text x="0.2769%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:400 (match_module_callback) (64,502 bytes, 0.02%)</title>
+            <rect x="0.0408%" y="430" width="0.0219%" height="21" fill="rgb(255,247,247)" fg:x="120311" fg:w="64502"/>
+            <text x="0.2908%" y="443.50"></text>
+        </g>
+        <g>
+            <title>                self._make_module_from_path(filepath) (64,502 bytes, 0.02%)</title>
+            <rect x="0.0408%" y="452" width="0.0219%" height="21" fill="rgb(255,247,247)" fg:x="120311" fg:w="64502"/>
+            <text x="0.2908%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/contextlib.py:112 (__enter__) (189,757 bytes, 0.06%)</title>
+            <rect x="0.0000%" y="122" width="0.0644%" height="21" fill="rgb(255,246,246)" fg:x="0" fg:w="189757"/>
+            <text x="0.2500%" y="135.50"></text>
+        </g>
+        <g>
+            <title>            return next(self.gen) (189,757 bytes, 0.06%)</title>
+            <rect x="0.0000%" y="144" width="0.0644%" height="21" fill="rgb(255,246,246)" fg:x="0" fg:w="189757"/>
+            <text x="0.2500%" y="157.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/filprofiler/_tracer.py:160 (disable_thread_pools) (117,515 bytes, 0.04%)</title>
+            <rect x="0.0245%" y="166" width="0.0399%" height="21" fill="rgb(255,247,247)" fg:x="72242" fg:w="117515"/>
+            <text x="0.2745%" y="179.50"></text>
+        </g>
+        <g>
+            <title>    with threadpoolctl.threadpool_limits({&quot;blas&quot;: 1, &quot;openmp&quot;: 1}): (117,515 bytes, 0.04%)</title>
+            <rect x="0.0245%" y="188" width="0.0399%" height="21" fill="rgb(255,247,247)" fg:x="72242" fg:w="117515"/>
+            <text x="0.2745%" y="201.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/threadpoolctl.py:171 (__init__) (116,603 bytes, 0.04%)</title>
+            <rect x="0.0248%" y="210" width="0.0396%" height="21" fill="rgb(255,247,247)" fg:x="73154" fg:w="116603"/>
+            <text x="0.2748%" y="223.50"></text>
+        </g>
+        <g>
+            <title>        self._original_info = self._set_threadpool_limits() (116,603 bytes, 0.04%)</title>
+            <rect x="0.0248%" y="232" width="0.0396%" height="21" fill="rgb(255,247,247)" fg:x="73154" fg:w="116603"/>
+            <text x="0.2748%" y="245.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/common.py:135 (forward) (611,644 bytes, 0.21%)</title>
+            <rect x="0.0699%" y="562" width="0.2076%" height="21" fill="rgb(255,243,243)" fg:x="205885" fg:w="611644"/>
+            <text x="0.3199%" y="575.50"></text>
+        </g>
+        <g>
+            <title>                1, (611,644 bytes, 0.21%)</title>
+            <rect x="0.0699%" y="584" width="0.2076%" height="21" fill="rgb(255,243,243)" fg:x="205885" fg:w="611644"/>
+            <text x="0.3199%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (609,228 bytes, 0.21%)</title>
+            <rect x="0.0707%" y="606" width="0.2068%" height="21" fill="rgb(255,243,243)" fg:x="208301" fg:w="609228"/>
+            <text x="0.3207%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (609,228 bytes, 0.21%)</title>
+            <rect x="0.0707%" y="628" width="0.2068%" height="21" fill="rgb(255,243,243)" fg:x="208301" fg:w="609228"/>
+            <text x="0.3207%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/common.py:42 (fuseforward) (609,228 bytes, 0.21%)</title>
+            <rect x="0.0707%" y="650" width="0.2068%" height="21" fill="rgb(255,243,243)" fg:x="208301" fg:w="609228"/>
+            <text x="0.3207%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self.act(self.conv(x)) (609,228 bytes, 0.21%)</title>
+            <rect x="0.0707%" y="672" width="0.2068%" height="21" fill="rgb(255,243,243)" fg:x="208301" fg:w="609228"/>
+            <text x="0.3207%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (609,228 bytes, 0.21%)</title>
+            <rect x="0.0707%" y="694" width="0.2068%" height="21" fill="rgb(255,243,243)" fg:x="208301" fg:w="609228"/>
+            <text x="0.3207%" y="707.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (609,228 bytes, 0.21%)</title>
+            <rect x="0.0707%" y="716" width="0.2068%" height="21" fill="rgb(255,243,243)" fg:x="208301" fg:w="609228"/>
+            <text x="0.3207%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (608,340 bytes, 0.21%)</title>
+            <rect x="0.0710%" y="738" width="0.2065%" height="21" fill="rgb(255,243,243)" fg:x="209189" fg:w="608340"/>
+            <text x="0.3210%" y="751.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (608,340 bytes, 0.21%)</title>
+            <rect x="0.0710%" y="760" width="0.2065%" height="21" fill="rgb(255,243,243)" fg:x="209189" fg:w="608340"/>
+            <text x="0.3210%" y="773.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (608,340 bytes, 0.21%)</title>
+            <rect x="0.0710%" y="782" width="0.2065%" height="21" fill="rgb(255,243,243)" fg:x="209189" fg:w="608340"/>
+            <text x="0.3210%" y="795.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (608,340 bytes, 0.21%)</title>
+            <rect x="0.0710%" y="804" width="0.2065%" height="21" fill="rgb(255,243,243)" fg:x="209189" fg:w="608340"/>
+            <text x="0.3210%" y="817.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/common.py:42 (fuseforward) (5,185,262 bytes, 1.76%)</title>
+            <rect x="0.2775%" y="562" width="1.7602%" height="21" fill="rgb(255,230,230)" fg:x="817529" fg:w="5185262"/>
+            <text x="0.5275%" y="575.50"></text>
+        </g>
+        <g>
+            <title>        return self.act(self.conv(x)) (5,185,262 bytes, 1.76%)</title>
+            <rect x="0.2775%" y="584" width="1.7602%" height="21" fill="rgb(255,230,230)" fg:x="817529" fg:w="5185262"/>
+            <text x="0.5275%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (5,185,262 bytes, 1.76%)</title>
+            <rect x="0.2775%" y="606" width="1.7602%" height="21" fill="rgb(255,230,230)" fg:x="817529" fg:w="5185262"/>
+            <text x="0.5275%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (5,185,262 bytes, 1.76%)</title>
+            <rect x="0.2775%" y="628" width="1.7602%" height="21" fill="rgb(255,230,230)" fg:x="817529" fg:w="5185262"/>
+            <text x="0.5275%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (5,185,262 bytes, 1.76%)</title>
+            <rect x="0.2775%" y="650" width="1.7602%" height="21" fill="rgb(255,230,230)" fg:x="817529" fg:w="5185262"/>
+            <text x="0.5275%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (5,185,262 bytes, 1.76%)</title>
+            <rect x="0.2775%" y="672" width="1.7602%" height="21" fill="rgb(255,230,230)" fg:x="817529" fg:w="5185262"/>
+            <text x="0.5275%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (5,185,262 bytes, 1.76%)</title>
+            <rect x="0.2775%" y="694" width="1.7602%" height="21" fill="rgb(255,230,230)" fg:x="817529" fg:w="5185262"/>
+            <text x="0.5275%" y="707.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (5,185,262 bytes, 1.76%)</title>
+            <rect x="0.2775%" y="716" width="1.7602%" height="21" fill="rgb(255,230,230)" fg:x="817529" fg:w="5185262"/>
+            <text x="0.5275%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/common.py:42 (fuseforward) (5,094,976 bytes, 1.73%)</title>
+            <rect x="2.0377%" y="650" width="1.7296%" height="21" fill="rgb(255,230,230)" fg:x="6002791" fg:w="5094976"/>
+            <text x="2.2877%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self.act(self.conv(x)) (5,094,976 bytes, 1.73%)</title>
+            <rect x="2.0377%" y="672" width="1.7296%" height="21" fill="rgb(255,230,230)" fg:x="6002791" fg:w="5094976"/>
+            <text x="2.2877%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (5,093,920 bytes, 1.73%)</title>
+            <rect x="2.0381%" y="694" width="1.7292%" height="21" fill="rgb(255,230,230)" fg:x="6003847" fg:w="5093920"/>
+            <text x="2.2881%" y="707.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (5,093,920 bytes, 1.73%)</title>
+            <rect x="2.0381%" y="716" width="1.7292%" height="21" fill="rgb(255,230,230)" fg:x="6003847" fg:w="5093920"/>
+            <text x="2.2881%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (5,093,920 bytes, 1.73%)</title>
+            <rect x="2.0381%" y="738" width="1.7292%" height="21" fill="rgb(255,230,230)" fg:x="6003847" fg:w="5093920"/>
+            <text x="2.2881%" y="751.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (5,093,920 bytes, 1.73%)</title>
+            <rect x="2.0381%" y="760" width="1.7292%" height="21" fill="rgb(255,230,230)" fg:x="6003847" fg:w="5093920"/>
+            <text x="2.2881%" y="773.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (5,093,920 bytes, 1.73%)</title>
+            <rect x="2.0381%" y="782" width="1.7292%" height="21" fill="rgb(255,230,230)" fg:x="6003847" fg:w="5093920"/>
+            <text x="2.2881%" y="795.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (5,093,920 bytes, 1.73%)</title>
+            <rect x="2.0381%" y="804" width="1.7292%" height="21" fill="rgb(255,230,230)" fg:x="6003847" fg:w="5093920"/>
+            <text x="2.2881%" y="817.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/common.py:98 (forward) (9,655,076 bytes, 3.28%)</title>
+            <rect x="2.0377%" y="562" width="3.2776%" height="21" fill="rgb(255,222,222)" fg:x="6002791" fg:w="9655076"/>
+            <text x="2.2877%" y="575.50">/h..</text>
+        </g>
+        <g>
+            <title>        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1)) (9,655,076 bytes, 3.28%)</title>
+            <rect x="2.0377%" y="584" width="3.2776%" height="21" fill="rgb(255,222,222)" fg:x="6002791" fg:w="9655076"/>
+            <text x="2.2877%" y="597.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (9,655,076 bytes, 3.28%)</title>
+            <rect x="2.0377%" y="606" width="3.2776%" height="21" fill="rgb(255,222,222)" fg:x="6002791" fg:w="9655076"/>
+            <text x="2.2877%" y="619.50">/h..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (9,655,076 bytes, 3.28%)</title>
+            <rect x="2.0377%" y="628" width="3.2776%" height="21" fill="rgb(255,222,222)" fg:x="6002791" fg:w="9655076"/>
+            <text x="2.2877%" y="641.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (4,560,100 bytes, 1.55%)</title>
+            <rect x="3.7673%" y="650" width="1.5480%" height="21" fill="rgb(255,231,231)" fg:x="11097767" fg:w="4560100"/>
+            <text x="4.0173%" y="663.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (4,560,100 bytes, 1.55%)</title>
+            <rect x="3.7673%" y="672" width="1.5480%" height="21" fill="rgb(255,231,231)" fg:x="11097767" fg:w="4560100"/>
+            <text x="4.0173%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (4,560,100 bytes, 1.55%)</title>
+            <rect x="3.7673%" y="694" width="1.5480%" height="21" fill="rgb(255,231,231)" fg:x="11097767" fg:w="4560100"/>
+            <text x="4.0173%" y="707.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (4,560,100 bytes, 1.55%)</title>
+            <rect x="3.7673%" y="716" width="1.5480%" height="21" fill="rgb(255,231,231)" fg:x="11097767" fg:w="4560100"/>
+            <text x="4.0173%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/common.py:57 (forward) (4,560,100 bytes, 1.55%)</title>
+            <rect x="3.7673%" y="738" width="1.5480%" height="21" fill="rgb(255,231,231)" fg:x="11097767" fg:w="4560100"/>
+            <text x="4.0173%" y="751.50"></text>
+        </g>
+        <g>
+            <title>        return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x)) (4,560,100 bytes, 1.55%)</title>
+            <rect x="3.7673%" y="760" width="1.5480%" height="21" fill="rgb(255,231,231)" fg:x="11097767" fg:w="4560100"/>
+            <text x="4.0173%" y="773.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (4,558,444 bytes, 1.55%)</title>
+            <rect x="3.7679%" y="782" width="1.5474%" height="21" fill="rgb(255,231,231)" fg:x="11099423" fg:w="4558444"/>
+            <text x="4.0179%" y="795.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (4,558,444 bytes, 1.55%)</title>
+            <rect x="3.7679%" y="804" width="1.5474%" height="21" fill="rgb(255,231,231)" fg:x="11099423" fg:w="4558444"/>
+            <text x="4.0179%" y="817.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/common.py:42 (fuseforward) (4,558,444 bytes, 1.55%)</title>
+            <rect x="3.7679%" y="826" width="1.5474%" height="21" fill="rgb(255,231,231)" fg:x="11099423" fg:w="4558444"/>
+            <text x="4.0179%" y="839.50"></text>
+        </g>
+        <g>
+            <title>        return self.act(self.conv(x)) (4,558,444 bytes, 1.55%)</title>
+            <rect x="3.7679%" y="848" width="1.5474%" height="21" fill="rgb(255,231,231)" fg:x="11099423" fg:w="4558444"/>
+            <text x="4.0179%" y="861.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (4,556,788 bytes, 1.55%)</title>
+            <rect x="3.7684%" y="870" width="1.5469%" height="21" fill="rgb(255,231,231)" fg:x="11101079" fg:w="4556788"/>
+            <text x="4.0184%" y="883.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (4,556,788 bytes, 1.55%)</title>
+            <rect x="3.7684%" y="892" width="1.5469%" height="21" fill="rgb(255,231,231)" fg:x="11101079" fg:w="4556788"/>
+            <text x="4.0184%" y="905.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (4,556,788 bytes, 1.55%)</title>
+            <rect x="3.7684%" y="914" width="1.5469%" height="21" fill="rgb(255,231,231)" fg:x="11101079" fg:w="4556788"/>
+            <text x="4.0184%" y="927.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (4,556,788 bytes, 1.55%)</title>
+            <rect x="3.7684%" y="936" width="1.5469%" height="21" fill="rgb(255,231,231)" fg:x="11101079" fg:w="4556788"/>
+            <text x="4.0184%" y="949.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (4,556,788 bytes, 1.55%)</title>
+            <rect x="3.7684%" y="958" width="1.5469%" height="21" fill="rgb(255,231,231)" fg:x="11101079" fg:w="4556788"/>
+            <text x="4.0184%" y="971.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (4,556,788 bytes, 1.55%)</title>
+            <rect x="3.7684%" y="980" width="1.5469%" height="21" fill="rgb(255,231,231)" fg:x="11101079" fg:w="4556788"/>
+            <text x="4.0184%" y="993.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/yolo.py:74 (forward) (73,291 bytes, 0.02%)</title>
+            <rect x="5.3155%" y="562" width="0.0249%" height="21" fill="rgb(255,247,247)" fg:x="15658529" fg:w="73291"/>
+            <text x="5.5655%" y="575.50"></text>
+        </g>
+        <g>
+            <title>                    self.grid[i] = self._make_grid(nx, ny).to(x[i].device) (73,291 bytes, 0.02%)</title>
+            <rect x="5.3155%" y="584" width="0.0249%" height="21" fill="rgb(255,247,247)" fg:x="15658529" fg:w="73291"/>
+            <text x="5.5655%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/yolo.py:88 (_make_grid) (68,328 bytes, 0.02%)</title>
+            <rect x="5.3172%" y="606" width="0.0232%" height="21" fill="rgb(255,247,247)" fg:x="15663492" fg:w="68328"/>
+            <text x="5.5672%" y="619.50"></text>
+        </g>
+        <g>
+            <title>        return torch.stack((xv, yv), 2).view((1, 1, ny, nx, 2)).float() (68,328 bytes, 0.02%)</title>
+            <rect x="5.3172%" y="628" width="0.0232%" height="21" fill="rgb(255,247,247)" fg:x="15663492" fg:w="68328"/>
+            <text x="5.5672%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/detector.py:89 (predict) (15,532,902 bytes, 5.27%)</title>
+            <rect x="0.0687%" y="210" width="5.2729%" height="21" fill="rgb(255,215,215)" fg:x="202320" fg:w="15532902"/>
+            <text x="0.3187%" y="223.50">/hom..</text>
+        </g>
+        <g>
+            <title>                pred = self.model(tensor)[0] (15,532,902 bytes, 5.27%)</title>
+            <rect x="0.0687%" y="232" width="5.2729%" height="21" fill="rgb(255,215,215)" fg:x="202320" fg:w="15532902"/>
+            <text x="0.3187%" y="245.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (15,532,902 bytes, 5.27%)</title>
+            <rect x="0.0687%" y="254" width="5.2729%" height="21" fill="rgb(255,215,215)" fg:x="202320" fg:w="15532902"/>
+            <text x="0.3187%" y="267.50">/hom..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (15,532,902 bytes, 5.27%)</title>
+            <rect x="0.0687%" y="276" width="5.2729%" height="21" fill="rgb(255,215,215)" fg:x="202320" fg:w="15532902"/>
+            <text x="0.3187%" y="289.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/autograd/grad_mode.py:27 (decorate_context) (15,532,902 bytes, 5.27%)</title>
+            <rect x="0.0687%" y="298" width="5.2729%" height="21" fill="rgb(255,215,215)" fg:x="202320" fg:w="15532902"/>
+            <text x="0.3187%" y="311.50">/hom..</text>
+        </g>
+        <g>
+            <title>                return func(*args, **kwargs) (15,532,902 bytes, 5.27%)</title>
+            <rect x="0.0687%" y="320" width="5.2729%" height="21" fill="rgb(255,215,215)" fg:x="202320" fg:w="15532902"/>
+            <text x="0.3187%" y="333.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/common.py:221 (forward) (15,532,902 bytes, 5.27%)</title>
+            <rect x="0.0687%" y="342" width="5.2729%" height="21" fill="rgb(255,215,215)" fg:x="202320" fg:w="15532902"/>
+            <text x="0.3187%" y="355.50">/hom..</text>
+        </g>
+        <g>
+            <title>                    imgs.to(p.device).type_as(p), augment, profile (15,532,902 bytes, 5.27%)</title>
+            <rect x="0.0687%" y="364" width="5.2729%" height="21" fill="rgb(255,215,215)" fg:x="202320" fg:w="15532902"/>
+            <text x="0.3187%" y="377.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (15,532,048 bytes, 5.27%)</title>
+            <rect x="0.0690%" y="386" width="5.2726%" height="21" fill="rgb(255,215,215)" fg:x="203174" fg:w="15532048"/>
+            <text x="0.3190%" y="399.50">/hom..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (15,532,048 bytes, 5.27%)</title>
+            <rect x="0.0690%" y="408" width="5.2726%" height="21" fill="rgb(255,215,215)" fg:x="203174" fg:w="15532048"/>
+            <text x="0.3190%" y="421.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/yolo.py:138 (forward) (15,532,048 bytes, 5.27%)</title>
+            <rect x="0.0690%" y="430" width="5.2726%" height="21" fill="rgb(255,215,215)" fg:x="203174" fg:w="15532048"/>
+            <text x="0.3190%" y="443.50">/hom..</text>
+        </g>
+        <g>
+            <title>        return self.forward_once(x, profile)  # single-scale inference, train (15,532,048 bytes, 5.27%)</title>
+            <rect x="0.0690%" y="452" width="5.2726%" height="21" fill="rgb(255,215,215)" fg:x="203174" fg:w="15532048"/>
+            <text x="0.3190%" y="465.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/table_detection/yolov5/models/yolo.py:150 (forward_once) (15,532,048 bytes, 5.27%)</title>
+            <rect x="0.0690%" y="474" width="5.2726%" height="21" fill="rgb(255,215,215)" fg:x="203174" fg:w="15532048"/>
+            <text x="0.3190%" y="487.50">/hom..</text>
+        </g>
+        <g>
+            <title>            x = m(x)  # run (15,532,048 bytes, 5.27%)</title>
+            <rect x="0.0690%" y="496" width="5.2726%" height="21" fill="rgb(255,215,215)" fg:x="203174" fg:w="15532048"/>
+            <text x="0.3190%" y="509.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (15,532,048 bytes, 5.27%)</title>
+            <rect x="0.0690%" y="518" width="5.2726%" height="21" fill="rgb(255,215,215)" fg:x="203174" fg:w="15532048"/>
+            <text x="0.3190%" y="531.50">/hom..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (15,532,048 bytes, 5.27%)</title>
+            <rect x="0.0690%" y="540" width="5.2726%" height="21" fill="rgb(255,215,215)" fg:x="203174" fg:w="15532048"/>
+            <text x="0.3190%" y="553.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/__init__.py:75 (extract) (15,555,012 bytes, 5.28%)</title>
+            <rect x="0.0649%" y="166" width="5.2804%" height="21" fill="rgb(255,215,215)" fg:x="191181" fg:w="15555012"/>
+            <text x="0.3149%" y="179.50">/hom..</text>
+        </g>
+        <g>
+            <title>        table_regions = self.table_detection_model.predict([image]) (15,555,012 bytes, 5.28%)</title>
+            <rect x="0.0649%" y="188" width="5.2804%" height="21" fill="rgb(255,215,215)" fg:x="191181" fg:w="15555012"/>
+            <text x="0.3149%" y="201.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/__init__.py:84 (extract) (3,637,480 bytes, 1.23%)</title>
+            <rect x="5.3453%" y="166" width="1.2348%" height="21" fill="rgb(255,233,233)" fg:x="15746193" fg:w="3637480"/>
+            <text x="5.5953%" y="179.50"></text>
+        </g>
+        <g>
+            <title>            padding_img = np.ones((h + 10, w + 10, 3), dtype=np.uint8) * 255 (3,637,480 bytes, 1.23%)</title>
+            <rect x="5.3453%" y="188" width="1.2348%" height="21" fill="rgb(255,233,233)" fg:x="15746193" fg:w="3637480"/>
+            <text x="5.5953%" y="201.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/numpy/core/numeric.py:204 (ones) (3,637,480 bytes, 1.23%)</title>
+            <rect x="5.3453%" y="210" width="1.2348%" height="21" fill="rgb(255,233,233)" fg:x="15746193" fg:w="3637480"/>
+            <text x="5.5953%" y="223.50"></text>
+        </g>
+        <g>
+            <title>    a = empty(shape, dtype, order) (3,637,480 bytes, 1.23%)</title>
+            <rect x="5.3453%" y="232" width="1.2348%" height="21" fill="rgb(255,233,233)" fg:x="15746193" fg:w="3637480"/>
+            <text x="5.5953%" y="245.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/PIL/Image.py:2734 (frombytes) (4,947,440 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="386" width="1.6795%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4947440"/>
+            <text x="6.8301%" y="399.50"></text>
+        </g>
+        <g>
+            <title>    im = new(mode, size) (4,947,440 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="408" width="1.6795%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4947440"/>
+            <text x="6.8301%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/PIL/Image.py:2698 (new) (4,947,440 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="430" width="1.6795%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4947440"/>
+            <text x="6.8301%" y="443.50"></text>
+        </g>
+        <g>
+            <title>    return im._new(core.fill(mode, size, color)) (4,947,440 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="452" width="1.6795%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4947440"/>
+            <text x="6.8301%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/line_segment.py:119 (_preprocess) (4,948,208 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="254" width="1.6797%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4948208"/>
+            <text x="6.8301%" y="267.50"></text>
+        </g>
+        <g>
+            <title>        pil_img = Image.fromarray(padding_img) (4,948,208 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="276" width="1.6797%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4948208"/>
+            <text x="6.8301%" y="289.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/PIL/Image.py:2849 (fromarray) (4,948,208 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="298" width="1.6797%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4948208"/>
+            <text x="6.8301%" y="311.50"></text>
+        </g>
+        <g>
+            <title>    return frombuffer(mode, size, obj, &quot;raw&quot;, rawmode, 0, 1) (4,948,208 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="320" width="1.6797%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4948208"/>
+            <text x="6.8301%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/PIL/Image.py:2789 (frombuffer) (4,948,208 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="342" width="1.6797%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4948208"/>
+            <text x="6.8301%" y="355.50"></text>
+        </g>
+        <g>
+            <title>    return frombytes(mode, size, data, decoder_name, args) (4,948,208 bytes, 1.68%)</title>
+            <rect x="6.5801%" y="364" width="1.6797%" height="21" fill="rgb(255,230,230)" fg:x="19383673" fg:w="4948208"/>
+            <text x="6.8301%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/PIL/Image.py:698 (__array__) (925,260 bytes, 0.31%)</title>
+            <rect x="8.2598%" y="298" width="0.3141%" height="21" fill="rgb(255,241,241)" fg:x="24331881" fg:w="925260"/>
+            <text x="8.5098%" y="311.50"></text>
+        </g>
+        <g>
+            <title>            new[&quot;data&quot;] = self.tobytes() (925,260 bytes, 0.31%)</title>
+            <rect x="8.2598%" y="320" width="0.3141%" height="21" fill="rgb(255,241,241)" fg:x="24331881" fg:w="925260"/>
+            <text x="8.5098%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/PIL/Image.py:761 (tobytes) (925,260 bytes, 0.31%)</title>
+            <rect x="8.2598%" y="342" width="0.3141%" height="21" fill="rgb(255,241,241)" fg:x="24331881" fg:w="925260"/>
+            <text x="8.5098%" y="355.50"></text>
+        </g>
+        <g>
+            <title>        return b&quot;&quot;.join(data) (925,260 bytes, 0.31%)</title>
+            <rect x="8.2598%" y="364" width="0.3141%" height="21" fill="rgb(255,241,241)" fg:x="24331881" fg:w="925260"/>
+            <text x="8.5098%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/line_segment.py:125 (_preprocess) (926,924 bytes, 0.31%)</title>
+            <rect x="8.2598%" y="254" width="0.3147%" height="21" fill="rgb(255,241,241)" fg:x="24331881" fg:w="926924"/>
+            <text x="8.5098%" y="267.50"></text>
+        </g>
+        <g>
+            <title>        img_nd = np.array(rz_pil_img) (926,924 bytes, 0.31%)</title>
+            <rect x="8.2598%" y="276" width="0.3147%" height="21" fill="rgb(255,241,241)" fg:x="24331881" fg:w="926924"/>
+            <text x="8.5098%" y="289.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/line_segment.py:73 (predict) (13,277,084 bytes, 4.51%)</title>
+            <rect x="6.5801%" y="210" width="4.5071%" height="21" fill="rgb(255,218,218)" fg:x="19383673" fg:w="13277084"/>
+            <text x="6.8301%" y="223.50">/ho..</text>
+        </g>
+        <g>
+            <title>            scale=scale_factor, (13,277,084 bytes, 4.51%)</title>
+            <rect x="6.5801%" y="232" width="4.5071%" height="21" fill="rgb(255,218,218)" fg:x="19383673" fg:w="13277084"/>
+            <text x="6.8301%" y="245.50">  ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/line_segment.py:130 (_preprocess) (7,401,952 bytes, 2.51%)</title>
+            <rect x="8.5745%" y="254" width="2.5127%" height="21" fill="rgb(255,226,226)" fg:x="25258805" fg:w="7401952"/>
+            <text x="8.8245%" y="267.50">/..</text>
+        </g>
+        <g>
+            <title>            img_trans = img_trans / 255 (7,401,952 bytes, 2.51%)</title>
+            <rect x="8.5745%" y="276" width="2.5127%" height="21" fill="rgb(255,226,226)" fg:x="25258805" fg:w="7401952"/>
+            <text x="8.8245%" y="289.50">..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/line_segment.py:77 (predict) (3,701,284 bytes, 1.26%)</title>
+            <rect x="11.0872%" y="210" width="1.2565%" height="21" fill="rgb(255,233,233)" fg:x="32660757" fg:w="3701284"/>
+            <text x="11.3372%" y="223.50"></text>
+        </g>
+        <g>
+            <title>        ts_img = ts_img.to(device=self.device, dtype=torch.float32) (3,701,284 bytes, 1.26%)</title>
+            <rect x="11.0872%" y="232" width="1.2565%" height="21" fill="rgb(255,233,233)" fg:x="32660757" fg:w="3701284"/>
+            <text x="11.3372%" y="245.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/batchnorm.py:140 (forward) (19,814,602 bytes, 6.73%)</title>
+            <rect x="12.3440%" y="562" width="6.7264%" height="21" fill="rgb(255,211,211)" fg:x="36362985" fg:w="19814602"/>
+            <text x="12.5940%" y="575.50">/home/..</text>
+        </g>
+        <g>
+            <title>            self.weight, self.bias, bn_training, exponential_average_factor, self.eps) (19,814,602 bytes, 6.73%)</title>
+            <rect x="12.3440%" y="584" width="6.7264%" height="21" fill="rgb(255,211,211)" fg:x="36362985" fg:w="19814602"/>
+            <text x="12.5940%" y="597.50">     ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/functional.py:2150 (batch_norm) (19,814,602 bytes, 6.73%)</title>
+            <rect x="12.3440%" y="606" width="6.7264%" height="21" fill="rgb(255,211,211)" fg:x="36362985" fg:w="19814602"/>
+            <text x="12.5940%" y="619.50">/home/..</text>
+        </g>
+        <g>
+            <title>        input, weight, bias, running_mean, running_var, training, momentum, eps, torch.backends.cudnn.enabled (19,814,602 bytes, 6.73%)</title>
+            <rect x="12.3440%" y="628" width="6.7264%" height="21" fill="rgb(255,211,211)" fg:x="36362985" fg:w="19814602"/>
+            <text x="12.5940%" y="641.50">     ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:85 (forward) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="298" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="311.50">/home/n..</text>
+        </g>
+        <g>
+            <title>        d1 = self.stem(x)  # 64 (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="320" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="333.50">      ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="342" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="355.50">/home/n..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="364" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="377.50">      ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="386" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="399.50">/home/n..</text>
+        </g>
+        <g>
+            <title>            input = module(input) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="408" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="421.50">      ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="430" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="443.50">/home/n..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="452" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="465.50">      ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="474" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="487.50">/home/n..</text>
+        </g>
+        <g>
+            <title>            input = module(input) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="496" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="509.50">      ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="518" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="531.50">/home/n..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (21,858,469 bytes, 7.42%)</title>
+            <rect x="12.3437%" y="540" width="7.4202%" height="21" fill="rgb(255,209,209)" fg:x="36362041" fg:w="21858469"/>
+            <text x="12.5937%" y="553.50">      ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (2,042,923 bytes, 0.69%)</title>
+            <rect x="19.0704%" y="562" width="0.6935%" height="21" fill="rgb(255,237,237)" fg:x="56177587" fg:w="2042923"/>
+            <text x="19.3204%" y="575.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (2,042,923 bytes, 0.69%)</title>
+            <rect x="19.0704%" y="584" width="0.6935%" height="21" fill="rgb(255,237,237)" fg:x="56177587" fg:w="2042923"/>
+            <text x="19.3204%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (2,042,923 bytes, 0.69%)</title>
+            <rect x="19.0704%" y="606" width="0.6935%" height="21" fill="rgb(255,237,237)" fg:x="56177587" fg:w="2042923"/>
+            <text x="19.3204%" y="619.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (2,042,923 bytes, 0.69%)</title>
+            <rect x="19.0704%" y="628" width="0.6935%" height="21" fill="rgb(255,237,237)" fg:x="56177587" fg:w="2042923"/>
+            <text x="19.3204%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:86 (forward) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="298" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="311.50"></text>
+        </g>
+        <g>
+            <title>        d2 = self.pool(d1) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="320" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="342" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="364" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/pooling.py:164 (forward) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="386" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="399.50"></text>
+        </g>
+        <g>
+            <title>                            self.return_indices) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="408" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/_jit_internal.py:365 (fn) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="430" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="443.50"></text>
+        </g>
+        <g>
+            <title>            return if_false(*args, **kwargs) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="452" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/functional.py:659 (_max_pool2d) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="474" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="487.50"></text>
+        </g>
+        <g>
+            <title>    return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode) (4,989,304 bytes, 1.69%)</title>
+            <rect x="19.7639%" y="496" width="1.6937%" height="21" fill="rgb(255,230,230)" fg:x="58220510" fg:w="4989304"/>
+            <text x="20.0139%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:88 (forward) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="298" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="311.50"></text>
+        </g>
+        <g>
+            <title>        d3 = self.block1(d2)  # 64 (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="320" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="342" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="364" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="386" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="399.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="408" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="430" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="443.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="452" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:59 (forward) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="474" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="487.50"></text>
+        </g>
+        <g>
+            <title>        return self.convs(x) + self.idconv(self.pool(x)) (5,854,905 bytes, 1.99%)</title>
+            <rect x="21.4576%" y="496" width="1.9875%" height="21" fill="rgb(255,228,228)" fg:x="63209814" fg:w="5854905"/>
+            <text x="21.7076%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (865,601 bytes, 0.29%)</title>
+            <rect x="23.1513%" y="518" width="0.2938%" height="21" fill="rgb(255,241,241)" fg:x="68199118" fg:w="865601"/>
+            <text x="23.4013%" y="531.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (865,601 bytes, 0.29%)</title>
+            <rect x="23.1513%" y="540" width="0.2938%" height="21" fill="rgb(255,241,241)" fg:x="68199118" fg:w="865601"/>
+            <text x="23.4013%" y="553.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (865,601 bytes, 0.29%)</title>
+            <rect x="23.1513%" y="562" width="0.2938%" height="21" fill="rgb(255,241,241)" fg:x="68199118" fg:w="865601"/>
+            <text x="23.4013%" y="575.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (865,601 bytes, 0.29%)</title>
+            <rect x="23.1513%" y="584" width="0.2938%" height="21" fill="rgb(255,241,241)" fg:x="68199118" fg:w="865601"/>
+            <text x="23.4013%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (864,545 bytes, 0.29%)</title>
+            <rect x="23.1516%" y="606" width="0.2935%" height="21" fill="rgb(255,241,241)" fg:x="68200174" fg:w="864545"/>
+            <text x="23.4016%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (864,545 bytes, 0.29%)</title>
+            <rect x="23.1516%" y="628" width="0.2935%" height="21" fill="rgb(255,241,241)" fg:x="68200174" fg:w="864545"/>
+            <text x="23.4016%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (864,545 bytes, 0.29%)</title>
+            <rect x="23.1516%" y="650" width="0.2935%" height="21" fill="rgb(255,241,241)" fg:x="68200174" fg:w="864545"/>
+            <text x="23.4016%" y="663.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (864,545 bytes, 0.29%)</title>
+            <rect x="23.1516%" y="672" width="0.2935%" height="21" fill="rgb(255,241,241)" fg:x="68200174" fg:w="864545"/>
+            <text x="23.4016%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (863,489 bytes, 0.29%)</title>
+            <rect x="23.1520%" y="694" width="0.2931%" height="21" fill="rgb(255,241,241)" fg:x="68201230" fg:w="863489"/>
+            <text x="23.4020%" y="707.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (863,489 bytes, 0.29%)</title>
+            <rect x="23.1520%" y="716" width="0.2931%" height="21" fill="rgb(255,241,241)" fg:x="68201230" fg:w="863489"/>
+            <text x="23.4020%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (863,489 bytes, 0.29%)</title>
+            <rect x="23.1520%" y="738" width="0.2931%" height="21" fill="rgb(255,241,241)" fg:x="68201230" fg:w="863489"/>
+            <text x="23.4020%" y="751.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (863,489 bytes, 0.29%)</title>
+            <rect x="23.1520%" y="760" width="0.2931%" height="21" fill="rgb(255,241,241)" fg:x="68201230" fg:w="863489"/>
+            <text x="23.4020%" y="773.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (863,489 bytes, 0.29%)</title>
+            <rect x="23.1520%" y="782" width="0.2931%" height="21" fill="rgb(255,241,241)" fg:x="68201230" fg:w="863489"/>
+            <text x="23.4020%" y="795.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (863,489 bytes, 0.29%)</title>
+            <rect x="23.1520%" y="804" width="0.2931%" height="21" fill="rgb(255,241,241)" fg:x="68201230" fg:w="863489"/>
+            <text x="23.4020%" y="817.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (8,164,034 bytes, 2.77%)</title>
+            <rect x="24.2922%" y="650" width="2.7714%" height="21" fill="rgb(255,225,225)" fg:x="71560087" fg:w="8164034"/>
+            <text x="24.5422%" y="663.50">/..</text>
+        </g>
+        <g>
+            <title>            input = module(input) (8,164,034 bytes, 2.77%)</title>
+            <rect x="24.2922%" y="672" width="2.7714%" height="21" fill="rgb(255,225,225)" fg:x="71560087" fg:w="8164034"/>
+            <text x="24.5422%" y="685.50">..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (8,164,034 bytes, 2.77%)</title>
+            <rect x="24.2922%" y="694" width="2.7714%" height="21" fill="rgb(255,225,225)" fg:x="71560087" fg:w="8164034"/>
+            <text x="24.5422%" y="707.50">/..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (8,164,034 bytes, 2.77%)</title>
+            <rect x="24.2922%" y="716" width="2.7714%" height="21" fill="rgb(255,225,225)" fg:x="71560087" fg:w="8164034"/>
+            <text x="24.5422%" y="729.50">..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (8,164,034 bytes, 2.77%)</title>
+            <rect x="24.2922%" y="738" width="2.7714%" height="21" fill="rgb(255,225,225)" fg:x="71560087" fg:w="8164034"/>
+            <text x="24.5422%" y="751.50">/..</text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (8,164,034 bytes, 2.77%)</title>
+            <rect x="24.2922%" y="760" width="2.7714%" height="21" fill="rgb(255,225,225)" fg:x="71560087" fg:w="8164034"/>
+            <text x="24.5422%" y="773.50">..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (8,164,034 bytes, 2.77%)</title>
+            <rect x="24.2922%" y="782" width="2.7714%" height="21" fill="rgb(255,225,225)" fg:x="71560087" fg:w="8164034"/>
+            <text x="24.5422%" y="795.50">/..</text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (8,164,034 bytes, 2.77%)</title>
+            <rect x="24.2922%" y="804" width="2.7714%" height="21" fill="rgb(255,225,225)" fg:x="71560087" fg:w="8164034"/>
+            <text x="24.5422%" y="817.50">..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (14,929,122 bytes, 5.07%)</title>
+            <rect x="24.2922%" y="562" width="5.0679%" height="21" fill="rgb(255,216,216)" fg:x="71560087" fg:w="14929122"/>
+            <text x="24.5422%" y="575.50">/hom..</text>
+        </g>
+        <g>
+            <title>            input = module(input) (14,929,122 bytes, 5.07%)</title>
+            <rect x="24.2922%" y="584" width="5.0679%" height="21" fill="rgb(255,216,216)" fg:x="71560087" fg:w="14929122"/>
+            <text x="24.5422%" y="597.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (14,929,122 bytes, 5.07%)</title>
+            <rect x="24.2922%" y="606" width="5.0679%" height="21" fill="rgb(255,216,216)" fg:x="71560087" fg:w="14929122"/>
+            <text x="24.5422%" y="619.50">/hom..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (14,929,122 bytes, 5.07%)</title>
+            <rect x="24.2922%" y="628" width="5.0679%" height="21" fill="rgb(255,216,216)" fg:x="71560087" fg:w="14929122"/>
+            <text x="24.5422%" y="641.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (6,765,088 bytes, 2.30%)</title>
+            <rect x="27.0636%" y="650" width="2.2965%" height="21" fill="rgb(255,227,227)" fg:x="79724121" fg:w="6765088"/>
+            <text x="27.3136%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (6,765,088 bytes, 2.30%)</title>
+            <rect x="27.0636%" y="672" width="2.2965%" height="21" fill="rgb(255,227,227)" fg:x="79724121" fg:w="6765088"/>
+            <text x="27.3136%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (6,765,088 bytes, 2.30%)</title>
+            <rect x="27.0636%" y="694" width="2.2965%" height="21" fill="rgb(255,227,227)" fg:x="79724121" fg:w="6765088"/>
+            <text x="27.3136%" y="707.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (6,765,088 bytes, 2.30%)</title>
+            <rect x="27.0636%" y="716" width="2.2965%" height="21" fill="rgb(255,227,227)" fg:x="79724121" fg:w="6765088"/>
+            <text x="27.3136%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:89 (forward) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="298" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="311.50">/home..</text>
+        </g>
+        <g>
+            <title>        d4 = self.block2(d3)  # 128 (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="320" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="333.50">    ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="342" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="355.50">/home..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="364" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="377.50">    ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="386" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="399.50">/home..</text>
+        </g>
+        <g>
+            <title>            input = module(input) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="408" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="421.50">    ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="430" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="443.50">/home..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="452" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="465.50">    ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:59 (forward) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="474" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="487.50">/home..</text>
+        </g>
+        <g>
+            <title>        return self.convs(x) + self.idconv(self.pool(x)) (17,426,311 bytes, 5.92%)</title>
+            <rect x="23.4451%" y="496" width="5.9156%" height="21" fill="rgb(255,213,213)" fg:x="69064719" fg:w="17426311"/>
+            <text x="23.6951%" y="509.50">    ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (14,930,943 bytes, 5.07%)</title>
+            <rect x="24.2922%" y="518" width="5.0685%" height="21" fill="rgb(255,216,216)" fg:x="71560087" fg:w="14930943"/>
+            <text x="24.5422%" y="531.50">/hom..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (14,930,943 bytes, 5.07%)</title>
+            <rect x="24.2922%" y="540" width="5.0685%" height="21" fill="rgb(255,216,216)" fg:x="71560087" fg:w="14930943"/>
+            <text x="24.5422%" y="553.50">   ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:90 (forward) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="298" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="311.50"></text>
+        </g>
+        <g>
+            <title>        d5 = self.block3(d4)  # 256 (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="320" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="342" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="364" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="386" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="399.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="408" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="430" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="443.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="452" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:59 (forward) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="474" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="487.50"></text>
+        </g>
+        <g>
+            <title>        return self.convs(x) + self.idconv(self.pool(x)) (2,700,538 bytes, 0.92%)</title>
+            <rect x="29.3607%" y="496" width="0.9167%" height="21" fill="rgb(255,235,235)" fg:x="86491030" fg:w="2700538"/>
+            <text x="29.6107%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="518" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="531.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="540" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="553.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="562" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="575.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="584" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="606" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="628" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="650" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="663.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="672" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="694" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="707.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="716" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="738" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="751.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="760" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="773.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="782" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="795.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (1,452,402 bytes, 0.49%)</title>
+            <rect x="29.7844%" y="804" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="87739166" fg:w="1452402"/>
+            <text x="30.0344%" y="817.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:91 (forward) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="298" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="311.50"></text>
+        </g>
+        <g>
+            <title>        d6 = self.block4(d5)  # 512 (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="320" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="342" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="364" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="386" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="399.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="408" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="430" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="443.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="452" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:59 (forward) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="474" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="487.50"></text>
+        </g>
+        <g>
+            <title>        return self.convs(x) + self.idconv(self.pool(x)) (2,097,898 bytes, 0.71%)</title>
+            <rect x="30.2775%" y="496" width="0.7122%" height="21" fill="rgb(255,237,237)" fg:x="89191568" fg:w="2097898"/>
+            <text x="30.5275%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="518" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="531.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="540" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="553.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="562" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="575.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="584" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="606" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="628" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="650" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="663.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="672" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="694" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="707.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="716" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="738" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="751.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="760" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="773.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="782" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="795.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (1,452,402 bytes, 0.49%)</title>
+            <rect x="30.4966%" y="804" width="0.4930%" height="21" fill="rgb(255,239,239)" fg:x="89837064" fg:w="1452402"/>
+            <text x="30.7466%" y="817.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:93 (forward) (2,282,134 bytes, 0.77%)</title>
+            <rect x="30.9896%" y="298" width="0.7747%" height="21" fill="rgb(255,236,236)" fg:x="91289466" fg:w="2282134"/>
+            <text x="31.2396%" y="311.50"></text>
+        </g>
+        <g>
+            <title>        h = self.up6(d6, d5)  # 512 + 256 -&gt; 256 (2,282,134 bytes, 0.77%)</title>
+            <rect x="30.9896%" y="320" width="0.7747%" height="21" fill="rgb(255,236,236)" fg:x="91289466" fg:w="2282134"/>
+            <text x="31.2396%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,282,134 bytes, 0.77%)</title>
+            <rect x="30.9896%" y="342" width="0.7747%" height="21" fill="rgb(255,236,236)" fg:x="91289466" fg:w="2282134"/>
+            <text x="31.2396%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,282,134 bytes, 0.77%)</title>
+            <rect x="30.9896%" y="364" width="0.7747%" height="21" fill="rgb(255,236,236)" fg:x="91289466" fg:w="2282134"/>
+            <text x="31.2396%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:68 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="386" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="399.50"></text>
+        </g>
+        <g>
+            <title>        return self.conv(x) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="408" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="430" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="443.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="452" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:25 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="474" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="487.50"></text>
+        </g>
+        <g>
+            <title>        return self.double_conv(x) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="496" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="518" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="531.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="540" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="553.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="562" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="575.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="584" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="606" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="628" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="650" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="672" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="694" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="707.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (2,278,498 bytes, 0.77%)</title>
+            <rect x="30.9909%" y="716" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="91293102" fg:w="2278498"/>
+            <text x="31.2409%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:94 (forward) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="298" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="311.50"></text>
+        </g>
+        <g>
+            <title>        h = self.up5(h, d4)  # 256 + 128 -&gt; 128 (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="320" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="342" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="364" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:68 (forward) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="386" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="399.50"></text>
+        </g>
+        <g>
+            <title>        return self.conv(x) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="408" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="430" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="443.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="452" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:25 (forward) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="474" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="487.50"></text>
+        </g>
+        <g>
+            <title>        return self.double_conv(x) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="496" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="518" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="531.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="540" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="553.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="562" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="575.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="584" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="606" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="628" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="650" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="672" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="694" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="707.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (2,278,874 bytes, 0.77%)</title>
+            <rect x="31.7643%" y="716" width="0.7736%" height="21" fill="rgb(255,236,236)" fg:x="93571600" fg:w="2278874"/>
+            <text x="32.0143%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:95 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="298" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="311.50"></text>
+        </g>
+        <g>
+            <title>        h = self.up4(h, d3)  # (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="320" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="342" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="364" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:68 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="386" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="399.50"></text>
+        </g>
+        <g>
+            <title>        return self.conv(x) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="408" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="430" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="443.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="452" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:25 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="474" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="487.50"></text>
+        </g>
+        <g>
+            <title>        return self.double_conv(x) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="496" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="518" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="531.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="540" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="553.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="562" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="575.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="584" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="606" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="628" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="650" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="672" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="694" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="707.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (2,278,498 bytes, 0.77%)</title>
+            <rect x="32.5379%" y="716" width="0.7735%" height="21" fill="rgb(255,236,236)" fg:x="95850474" fg:w="2278498"/>
+            <text x="32.7879%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:96 (forward) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="298" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="311.50"></text>
+        </g>
+        <g>
+            <title>        h = self.up3(h, d2) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="320" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="333.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="342" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="355.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="364" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="377.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:68 (forward) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="386" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="399.50"></text>
+        </g>
+        <g>
+            <title>        return self.conv(x) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="408" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="421.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="430" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="443.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="452" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="465.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:25 (forward) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="474" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="487.50"></text>
+        </g>
+        <g>
+            <title>        return self.double_conv(x) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="496" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="509.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="518" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="531.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="540" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="553.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="562" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="575.50"></text>
+        </g>
+        <g>
+            <title>            input = module(input) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="584" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="597.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="606" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="619.50"></text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="628" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="641.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="650" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="672" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="694" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="707.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (1,453,434 bytes, 0.49%)</title>
+            <rect x="33.3114%" y="716" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="98128972" fg:w="1453434"/>
+            <text x="33.5614%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/batchnorm.py:140 (forward) (9,905,656 bytes, 3.36%)</title>
+            <rect x="33.8048%" y="650" width="3.3626%" height="21" fill="rgb(255,222,222)" fg:x="99582406" fg:w="9905656"/>
+            <text x="34.0548%" y="663.50">/h..</text>
+        </g>
+        <g>
+            <title>            self.weight, self.bias, bn_training, exponential_average_factor, self.eps) (9,905,656 bytes, 3.36%)</title>
+            <rect x="33.8048%" y="672" width="3.3626%" height="21" fill="rgb(255,222,222)" fg:x="99582406" fg:w="9905656"/>
+            <text x="34.0548%" y="685.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/functional.py:2150 (batch_norm) (9,905,656 bytes, 3.36%)</title>
+            <rect x="33.8048%" y="694" width="3.3626%" height="21" fill="rgb(255,222,222)" fg:x="99582406" fg:w="9905656"/>
+            <text x="34.0548%" y="707.50">/h..</text>
+        </g>
+        <g>
+            <title>        input, weight, bias, running_mean, running_var, training, momentum, eps, torch.backends.cudnn.enabled (9,905,656 bytes, 3.36%)</title>
+            <rect x="33.8048%" y="716" width="3.3626%" height="21" fill="rgb(255,222,222)" fg:x="99582406" fg:w="9905656"/>
+            <text x="34.0548%" y="729.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:97 (forward) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="298" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="311.50">/h..</text>
+        </g>
+        <g>
+            <title>        h = self.up2(h, d1) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="320" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="333.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="342" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="355.50">/h..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="364" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="377.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:68 (forward) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="386" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="399.50">/h..</text>
+        </g>
+        <g>
+            <title>        return self.conv(x) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="408" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="421.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="430" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="443.50">/h..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="452" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="465.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:25 (forward) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="474" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="487.50">/h..</text>
+        </g>
+        <g>
+            <title>        return self.double_conv(x) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="496" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="509.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="518" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="531.50">/h..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="540" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="553.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="562" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="575.50">/h..</text>
+        </g>
+        <g>
+            <title>            input = module(input) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="584" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="597.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="606" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="619.50">/h..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (11,358,986 bytes, 3.86%)</title>
+            <rect x="33.8048%" y="628" width="3.8560%" height="21" fill="rgb(255,220,220)" fg:x="99582406" fg:w="11358986"/>
+            <text x="34.0548%" y="641.50"> ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (1,453,330 bytes, 0.49%)</title>
+            <rect x="37.1674%" y="650" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="109488062" fg:w="1453330"/>
+            <text x="37.4174%" y="663.50"></text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (1,453,330 bytes, 0.49%)</title>
+            <rect x="37.1674%" y="672" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="109488062" fg:w="1453330"/>
+            <text x="37.4174%" y="685.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (1,453,330 bytes, 0.49%)</title>
+            <rect x="37.1674%" y="694" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="109488062" fg:w="1453330"/>
+            <text x="37.4174%" y="707.50"></text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (1,453,330 bytes, 0.49%)</title>
+            <rect x="37.1674%" y="716" width="0.4934%" height="21" fill="rgb(255,239,239)" fg:x="109488062" fg:w="1453330"/>
+            <text x="37.4174%" y="729.50"></text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:63 (forward) (39,476,728 bytes, 13.40%)</title>
+            <rect x="37.6608%" y="386" width="13.4010%" height="21" fill="rgb(255,195,195)" fg:x="110941392" fg:w="39476728"/>
+            <text x="37.9108%" y="399.50">/home/niits/SUN..</text>
+        </g>
+        <g>
+            <title>        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2]) (39,476,728 bytes, 13.40%)</title>
+            <rect x="37.6608%" y="408" width="13.4010%" height="21" fill="rgb(255,195,195)" fg:x="110941392" fg:w="39476728"/>
+            <text x="37.9108%" y="421.50">        x1 = F..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/functional.py:4000 (_pad) (39,476,728 bytes, 13.40%)</title>
+            <rect x="37.6608%" y="430" width="13.4010%" height="21" fill="rgb(255,195,195)" fg:x="110941392" fg:w="39476728"/>
+            <text x="37.9108%" y="443.50">/home/niits/ana..</text>
+        </g>
+        <g>
+            <title>        return _VF.constant_pad_nd(input, pad, value) (39,476,728 bytes, 13.40%)</title>
+            <rect x="37.6608%" y="452" width="13.4010%" height="21" fill="rgb(255,195,195)" fg:x="110941392" fg:w="39476728"/>
+            <text x="37.9108%" y="465.50">        return..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:67 (forward) (43,177,695 bytes, 14.66%)</title>
+            <rect x="51.0618%" y="386" width="14.6573%" height="21" fill="rgb(255,192,192)" fg:x="150418120" fg:w="43177695"/>
+            <text x="51.3118%" y="399.50">/home/niits/SUN/..</text>
+        </g>
+        <g>
+            <title>        x = torch.cat([x2, x1], dim=1) (43,177,695 bytes, 14.66%)</title>
+            <rect x="51.0618%" y="408" width="14.6573%" height="21" fill="rgb(255,192,192)" fg:x="150418120" fg:w="43177695"/>
+            <text x="51.3118%" y="421.50">        x = tor..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/batchnorm.py:140 (forward) (20,972,188 bytes, 7.12%)</title>
+            <rect x="65.7191%" y="650" width="7.1193%" height="21" fill="rgb(255,210,210)" fg:x="193595815" fg:w="20972188"/>
+            <text x="65.9691%" y="663.50">/home/n..</text>
+        </g>
+        <g>
+            <title>            self.weight, self.bias, bn_training, exponential_average_factor, self.eps) (20,972,188 bytes, 7.12%)</title>
+            <rect x="65.7191%" y="672" width="7.1193%" height="21" fill="rgb(255,210,210)" fg:x="193595815" fg:w="20972188"/>
+            <text x="65.9691%" y="685.50">      ..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/functional.py:2150 (batch_norm) (20,972,188 bytes, 7.12%)</title>
+            <rect x="65.7191%" y="694" width="7.1193%" height="21" fill="rgb(255,210,210)" fg:x="193595815" fg:w="20972188"/>
+            <text x="65.9691%" y="707.50">/home/n..</text>
+        </g>
+        <g>
+            <title>        input, weight, bias, running_mean, running_var, training, momentum, eps, torch.backends.cudnn.enabled (20,972,188 bytes, 7.12%)</title>
+            <rect x="65.7191%" y="716" width="7.1193%" height="21" fill="rgb(255,210,210)" fg:x="193595815" fg:w="20972188"/>
+            <text x="65.9691%" y="729.50">      ..</text>
+        </g>
+        <g>
+            <title>/tmp/ipykernel_181619/1761890916.py:2 (__magic_run_with_fil) (294,290,696 bytes, 99.90%)</title>
+            <rect x="0.0647%" y="122" width="99.9015%" height="21" fill="rgb(255,100,100)" fg:x="190453" fg:w="294290696"/>
+            <text x="0.3147%" y="135.50">/tmp/ipykernel_181619/1761890916.py:2 (__magic_run_with_fil)</text>
+        </g>
+        <g>
+            <title>    tables = extraction.extract(image) (294,290,696 bytes, 99.90%)</title>
+            <rect x="0.0647%" y="144" width="99.9015%" height="21" fill="rgb(255,100,100)" fg:x="190453" fg:w="294290696"/>
+            <text x="0.3147%" y="157.50">    tables = extraction.extract(image)</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/__init__.py:87 (extract) (275,097,476 bytes, 93.39%)</title>
+            <rect x="6.5801%" y="166" width="93.3861%" height="21" fill="rgb(255,105,105)" fg:x="19383673" fg:w="275097476"/>
+            <text x="6.8301%" y="179.50">/home/niits/SUN/table_reconstruction/table_reconstruction/__init__.py:87 (extract)</text>
+        </g>
+        <g>
+            <title>            mask = self.line_segmentation_model.predict(padding_img) (275,097,476 bytes, 93.39%)</title>
+            <rect x="6.5801%" y="188" width="93.3861%" height="21" fill="rgb(255,105,105)" fg:x="19383673" fg:w="275097476"/>
+            <text x="6.8301%" y="201.50">            mask = self.line_segmentation_model.predict(padding_img)</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/line_segment.py:80 (predict) (258,119,108 bytes, 87.62%)</title>
+            <rect x="12.3437%" y="210" width="87.6225%" height="21" fill="rgb(255,109,109)" fg:x="36362041" fg:w="258119108"/>
+            <text x="12.5937%" y="223.50">/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/line_segment.py:80 (predict)</text>
+        </g>
+        <g>
+            <title>            output = self.model(ts_img) (258,119,108 bytes, 87.62%)</title>
+            <rect x="12.3437%" y="232" width="87.6225%" height="21" fill="rgb(255,109,109)" fg:x="36362041" fg:w="258119108"/>
+            <text x="12.5937%" y="245.50">            output = self.model(ts_img)</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (258,119,108 bytes, 87.62%)</title>
+            <rect x="12.3437%" y="254" width="87.6225%" height="21" fill="rgb(255,109,109)" fg:x="36362041" fg:w="258119108"/>
+            <text x="12.5937%" y="267.50">/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_cal..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (258,119,108 bytes, 87.62%)</title>
+            <rect x="12.3437%" y="276" width="87.6225%" height="21" fill="rgb(255,109,109)" fg:x="36362041" fg:w="258119108"/>
+            <text x="12.5937%" y="289.50">            result = self.forward(*input, **kwargs)</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/resunet.py:98 (forward) (183,539,757 bytes, 62.31%)</title>
+            <rect x="37.6608%" y="298" width="62.3054%" height="21" fill="rgb(255,131,131)" fg:x="110941392" fg:w="183539757"/>
+            <text x="37.9108%" y="311.50">/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/u..</text>
+        </g>
+        <g>
+            <title>        h = self.up1(h, x) (183,539,757 bytes, 62.31%)</title>
+            <rect x="37.6608%" y="320" width="62.3054%" height="21" fill="rgb(255,131,131)" fg:x="110941392" fg:w="183539757"/>
+            <text x="37.9108%" y="333.50">        h = self.up1(h, x)</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (183,539,757 bytes, 62.31%)</title>
+            <rect x="37.6608%" y="342" width="62.3054%" height="21" fill="rgb(255,131,131)" fg:x="110941392" fg:w="183539757"/>
+            <text x="37.9108%" y="355.50">/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torc..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (183,539,757 bytes, 62.31%)</title>
+            <rect x="37.6608%" y="364" width="62.3054%" height="21" fill="rgb(255,131,131)" fg:x="110941392" fg:w="183539757"/>
+            <text x="37.9108%" y="377.50">            result = self.forward(*input, **kwargs)..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:68 (forward) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="386" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="399.50">/home/niits/SUN/table_reconstruction/tabl..</text>
+        </g>
+        <g>
+            <title>        return self.conv(x) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="408" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="421.50">        return self.conv(x)..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="430" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="443.50">/home/niits/anaconda3/envs/table_reconstr..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="452" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="465.50">            result = self.forward(*input..</text>
+        </g>
+        <g>
+            <title>/home/niits/SUN/table_reconstruction/table_reconstruction/line_segmentation/unet/unet_parts.py:25 (forward) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="474" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="487.50">/home/niits/SUN/table_reconstruction/tabl..</text>
+        </g>
+        <g>
+            <title>        return self.double_conv(x) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="496" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="509.50">        return self.double_conv(x)..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="518" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="531.50">/home/niits/anaconda3/envs/table_reconstr..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="540" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="553.50">            result = self.forward(*input..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/container.py:119 (forward) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="562" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="575.50">/home/niits/anaconda3/envs/table_reconstr..</text>
+        </g>
+        <g>
+            <title>            input = module(input) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="584" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="597.50">            input = module(input)..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/module.py:889 (_call_impl) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="606" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="619.50">/home/niits/anaconda3/envs/table_reconstr..</text>
+        </g>
+        <g>
+            <title>            result = self.forward(*input, **kwargs) (100,885,334 bytes, 34.25%)</title>
+            <rect x="65.7191%" y="628" width="34.2471%" height="21" fill="rgb(255,162,162)" fg:x="193595815" fg:w="100885334"/>
+            <text x="65.9691%" y="641.50">            result = self.forward(*input..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:399 (forward) (79,913,146 bytes, 27.13%)</title>
+            <rect x="72.8384%" y="650" width="27.1278%" height="21" fill="rgb(255,171,171)" fg:x="214568003" fg:w="79913146"/>
+            <text x="73.0884%" y="663.50">/home/niits/anaconda3/envs/table..</text>
+        </g>
+        <g>
+            <title>        return self._conv_forward(input, self.weight, self.bias) (79,913,146 bytes, 27.13%)</title>
+            <rect x="72.8384%" y="672" width="27.1278%" height="21" fill="rgb(255,171,171)" fg:x="214568003" fg:w="79913146"/>
+            <text x="73.0884%" y="685.50">        return self._conv_forwa..</text>
+        </g>
+        <g>
+            <title>/home/niits/anaconda3/envs/table_reconstruct/lib/python3.7/site-packages/torch/nn/modules/conv.py:396 (_conv_forward) (79,913,146 bytes, 27.13%)</title>
+            <rect x="72.8384%" y="694" width="27.1278%" height="21" fill="rgb(255,171,171)" fg:x="214568003" fg:w="79913146"/>
+            <text x="73.0884%" y="707.50">/home/niits/anaconda3/envs/table..</text>
+        </g>
+        <g>
+            <title>                        self.padding, self.dilation, self.groups) (79,913,146 bytes, 27.13%)</title>
+            <rect x="72.8384%" y="716" width="27.1278%" height="21" fill="rgb(255,171,171)" fg:x="214568003" fg:w="79913146"/>
+            <text x="73.0884%" y="729.50">                        self.pa..</text>
+        </g>
+        <g>
+            <title>all (294,580,715 bytes, 100%)</title>
+            <rect x="0.0000%" y="100" width="100.0000%" height="21" fill="rgb(255,100,100)" fg:x="0" fg:w="294580715"/>
+            <text x="0.2500%" y="113.50"></text>
+        </g>
+        <g>
+            <title>[No Python stack] (99,566 bytes, 0.03%)</title>
+            <rect x="99.9662%" y="122" width="0.0338%" height="21" fill="rgb(255,247,247)" fg:x="294481149" fg:w="99566"/>
+            <text x="100.2162%" y="135.50"></text>
+        </g>
+    </svg>
+</svg>

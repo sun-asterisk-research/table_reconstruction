@@ -31,7 +31,6 @@ setup(
         "Bug Tracker": "{}/issues".format(home_page),
     },
     include_package_data=True,
-    python_requires=">=3.6",
     install_requires=requirements,
     package_dir={"": "."},
     packages=find_packages(where=".", exclude=["tests"]),
@@ -41,4 +40,5 @@ setup(
             "source_dir": ("setup.py", "docs/source"),
         }
     },
+    python_requires='>=3.7.0',
 )
