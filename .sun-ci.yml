@@ -67,11 +67,7 @@ jobs:
     script:
       - python3 setup.py bdist_wheel sdist
       - pip3 install twine
-      - python3 -m twine upload dist/* \
-        --repository table_reconstruction   \
-        --verbose -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD}  \
-        --repository-url https://upload.pypi.org/legacy/ \
-        --non-interactive
+      - python3 -m twine upload dist/* --repository table_reconstruction --verbose -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD} --repository-url https://upload.pypi.org/legacy/ --non-interactive
     artifacts:
       name: dist
       paths:
