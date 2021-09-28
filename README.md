@@ -38,7 +38,7 @@ image = ... # Accept Numpy ndarray and PIL image
 tables = extraction.extract(image)
 ```
 
-We also provide a simple Jupyter notebook which can be used to illustrate the results obtained after processing, please check it out [here](example/example.ipynb)
+We also provide a simple Jupyter notebook which can be used to illustrate the results obtained after processing, please check it out [here](https://github.com/sun-asterisk-research/table_reconstruction/blob/master/example/example.ipynb)
 
 ## Documentation
 
