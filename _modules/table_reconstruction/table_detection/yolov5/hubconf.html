@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table_reconstruction.table_detection.yolov5.hubconf &mdash; Table Reconstuction  documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../index.html" class="icon icon-home"> Table Reconstuction
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Table Reconstuction</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../../table_reconstruction.html">table_reconstruction</a> &raquo;</li>
+      <li>table_reconstruction.table_detection.yolov5.hubconf</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for table_reconstruction.table_detection.yolov5.hubconf</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+
+<span class="k">def</span> <span class="nf">_create</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">,</span>
+    <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="n">classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">80</span><span class="p">,</span>
+    <span class="n">autoshape</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a specified YOLOv5 model</span>
+<span class="sd">    Arguments:</span>
+<span class="sd">        name (str): name of model, i.e. &#39;yolov5s&#39;</span>
+<span class="sd">        pretrained (bool): load pretrained weights into the model</span>
+<span class="sd">        channels (int): number of input channels</span>
+<span class="sd">        classes (int): number of model classes</span>
+<span class="sd">        autoshape (bool): apply YOLOv5 .autoshape() wrapper to model</span>
+<span class="sd">        verbose (bool): print all information to screen</span>
+<span class="sd">        device (str, torch.device, None): device to use for model parameters</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        YOLOv5 pytorch model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+    <span class="kn">from</span> <span class="nn">models.experimental</span> <span class="kn">import</span> <span class="n">attempt_load</span>
+    <span class="kn">from</span> <span class="nn">models.yolo</span> <span class="kn">import</span> <span class="n">Model</span>
+
+    <span class="n">file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
+
+    <span class="n">save_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.pt&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">file</span><span class="o">.</span><span class="n">parent</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="p">(</span><span class="n">save_dir</span> <span class="o">/</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.pt&quot;</span><span class="p">)</span>  <span class="c1"># checkpoint path</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">select_device</span><span class="p">(</span>
+            <span class="p">(</span><span class="s2">&quot;0&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">device</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pretrained</span> <span class="ow">and</span> <span class="n">channels</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">classes</span> <span class="o">==</span> <span class="mi">80</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">attempt_load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># download/load FP32 model</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;models&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.yaml&quot;</span><span class="p">))[</span>
+                <span class="mi">0</span>
+            <span class="p">]</span>  <span class="c1"># model.yaml path</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">classes</span><span class="p">)</span>  <span class="c1"># create model</span>
+        <span class="k">if</span> <span class="n">autoshape</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">autoshape</span><span class="p">()</span>  <span class="c1"># for file/URI/PIL/cv2/np inputs and NMS</span>
+        <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">help_url</span> <span class="o">=</span> <span class="s2">&quot;https://github.com/ultralytics/yolov5/issues/36&quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Cache may be out of date, try `force_reload=True`. See </span><span class="si">%s</span><span class="s2"> for help.&quot;</span>
+            <span class="o">%</span> <span class="n">help_url</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+
+<div class="viewcode-block" id="custom"><a class="viewcode-back" href="../../../../table_reconstruction.table_detection.yolov5.html#table_reconstruction.table_detection.yolov5.hubconf.custom">[docs]</a><span class="k">def</span> <span class="nf">custom</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;path/to/model.pt&quot;</span><span class="p">,</span> <span class="n">autoshape</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># YOLOv5 custom or local model</span>
+    <span class="k">return</span> <span class="n">_create</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">autoshape</span><span class="o">=</span><span class="n">autoshape</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="select_device"><a class="viewcode-back" href="../../../../table_reconstruction.table_detection.yolov5.html#table_reconstruction.table_detection.yolov5.hubconf.select_device">[docs]</a><span class="k">def</span> <span class="nf">select_device</span><span class="p">(</span><span class="n">device</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Select device where model and image will be allocated on</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        device (str, optional): name of device (cpu, cuda, ..). Defaults to &quot;&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        device (torch.device): selected device</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span>
+    <span class="n">cpu</span> <span class="o">=</span> <span class="n">device</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;cpu&quot;</span>
+    <span class="n">cuda</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">cpu</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span> <span class="k">if</span> <span class="n">cuda</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Sun* Research.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

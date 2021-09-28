@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table_reconstruction.table_detection.yolov5.models package &mdash; Table Reconstuction  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Table Reconstuction
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">table_reconstruction.table_detection.yolov5.models package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.table_detection.yolov5.models.common">table_reconstruction.table_detection.yolov5.models.common module</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.table_detection.yolov5.models.experimental">table_reconstruction.table_detection.yolov5.models.experimental module</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.table_detection.yolov5.models.utils">table_reconstruction.table_detection.yolov5.models.utils module</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.table_detection.yolov5.models.yolo">table_reconstruction.table_detection.yolov5.models.yolo module</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.table_detection.yolov5.models">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Table Reconstuction</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>table_reconstruction.table_detection.yolov5.models package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/table_reconstruction.table_detection.yolov5.models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="table-reconstruction-table-detection-yolov5-models-package">
+<h1>table_reconstruction.table_detection.yolov5.models package<a class="headerlink" href="#table-reconstruction-table-detection-yolov5-models-package" title="Permalink to this headline"></a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</div>
+<div class="section" id="module-table_reconstruction.table_detection.yolov5.models.common">
+<span id="table-reconstruction-table-detection-yolov5-models-common-module"></span><h2>table_reconstruction.table_detection.yolov5.models.common module<a class="headerlink" href="#module-table_reconstruction.table_detection.yolov5.models.common" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Bottleneck">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Bottleneck</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Bottleneck"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Bottleneck" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Bottleneck.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shortcut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Bottleneck.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Bottleneck.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Bottleneck.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Bottleneck.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Bottleneck.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Bottleneck.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Bottleneck.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">BottleneckCSP</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#BottleneckCSP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shortcut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#BottleneckCSP.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#BottleneckCSP.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.C3">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">C3</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#C3"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.C3" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.C3.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shortcut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#C3.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.C3.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.C3.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#C3.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.C3.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.C3.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.C3.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Concat">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Concat</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Concat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Concat" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Concat.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Concat.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Concat.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Concat.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Concat.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Concat.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Concat.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Concat.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Contract">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Contract</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Contract"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Contract" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Contract.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Contract.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Contract.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Contract.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Contract.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Contract.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Contract.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Contract.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Conv">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Conv</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Conv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Conv" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Conv.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Conv.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Conv.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Conv.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Conv.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Conv.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Conv.fuseforward">
+<span class="sig-name descname"><span class="pre">fuseforward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Conv.fuseforward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Conv.fuseforward" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Conv.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Conv.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.DWConv">
+<span class="sig-name descname"><span class="pre">DWConv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#DWConv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.DWConv" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Expand">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Expand</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Expand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Expand" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Expand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Expand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Expand.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Expand.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Expand.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Expand.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Expand.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Expand.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Focus">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Focus</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Focus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Focus" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Focus.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Focus.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Focus.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Focus.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#Focus.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Focus.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.Focus.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.Focus.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.NMS">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">NMS</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#NMS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.NMS" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.NMS.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#NMS.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.NMS.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.NMS.classes">
+<span class="sig-name descname"><span class="pre">classes</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.NMS.classes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.NMS.conf">
+<span class="sig-name descname"><span class="pre">conf</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0.25</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.NMS.conf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.NMS.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#NMS.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.NMS.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.NMS.iou">
+<span class="sig-name descname"><span class="pre">iou</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0.45</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.NMS.iou" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.NMS.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.NMS.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.SPP">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">SPP</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#SPP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.SPP" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.SPP.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(5,</span> <span class="pre">9,</span> <span class="pre">13)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#SPP.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.SPP.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.SPP.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#SPP.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.SPP.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.SPP.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.SPP.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autoShape">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">autoShape</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#autoShape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autoShape" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autoShape.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#autoShape.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autoShape.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autoShape.autoshape">
+<span class="sig-name descname"><span class="pre">autoshape</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#autoShape.autoshape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autoShape.autoshape" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autoShape.classes">
+<span class="sig-name descname"><span class="pre">classes</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autoShape.classes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autoShape.conf">
+<span class="sig-name descname"><span class="pre">conf</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0.25</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autoShape.conf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autoShape.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imgs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">640</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#autoShape.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autoShape.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autoShape.iou">
+<span class="sig-name descname"><span class="pre">iou</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0.45</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autoShape.iou" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autoShape.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autoShape.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.common.autopad">
+<span class="sig-name descname"><span class="pre">autopad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/common.html#autopad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.common.autopad" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-table_reconstruction.table_detection.yolov5.models.experimental">
+<span id="table-reconstruction-table-detection-yolov5-models-experimental-module"></span><h2>table_reconstruction.table_detection.yolov5.models.experimental module<a class="headerlink" href="#module-table_reconstruction.table_detection.yolov5.models.experimental" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.experimental.Ensemble">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Ensemble</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/experimental.html#Ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.experimental.Ensemble" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.container.ModuleList</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.experimental.Ensemble.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/experimental.html#Ensemble.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.experimental.Ensemble.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.experimental.Ensemble.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/experimental.html#Ensemble.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.experimental.Ensemble.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.experimental.Ensemble.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.experimental.Ensemble.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.experimental.attempt_load">
+<span class="sig-name descname"><span class="pre">attempt_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">map_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/experimental.html#attempt_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.experimental.attempt_load" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-table_reconstruction.table_detection.yolov5.models.utils">
+<span id="table-reconstruction-table-detection-yolov5-models-utils-module"></span><h2>table_reconstruction.table_detection.yolov5.models.utils module<a class="headerlink" href="#module-table_reconstruction.table_detection.yolov5.models.utils" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.box_iou">
+<span class="sig-name descname"><span class="pre">box_iou</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">box1</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">box2</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#box_iou"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.box_iou" title="Permalink to this definition"></a></dt>
+<dd><p>Return intersection-over-union (Jaccard index) of boxes.
+Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+:param box1:
+:type box1: Tensor[N, 4]
+:param box2:
+:type box2: Tensor[M, 4]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>the NxM matrix containing the pairwise</dt><dd><p>IoU values for every element in boxes1 and boxes2</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>iou (Tensor[N, M])</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.check_anchor_order">
+<span class="sig-name descname"><span class="pre">check_anchor_order</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#check_anchor_order"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.check_anchor_order" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.clip_coords">
+<span class="sig-name descname"><span class="pre">clip_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boxes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_shape</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">,</span> </span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#clip_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.clip_coords" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.copy_attr">
+<span class="sig-name descname"><span class="pre">copy_attr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#copy_attr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.copy_attr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.fuse_conv_and_bn">
+<span class="sig-name descname"><span class="pre">fuse_conv_and_bn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#fuse_conv_and_bn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.fuse_conv_and_bn" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.initialize_weights">
+<span class="sig-name descname"><span class="pre">initialize_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#initialize_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.initialize_weights" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.letterbox">
+<span class="sig-name descname"><span class="pre">letterbox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_shape</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">640</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">tuple</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">(114,</span> <span class="pre">114,</span> <span class="pre">114)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaleFill</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaleup</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#letterbox"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.letterbox" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.make_divisible">
+<span class="sig-name descname"><span class="pre">make_divisible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">divisor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#make_divisible"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.make_divisible" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.non_max_suppression">
+<span class="sig-name descname"><span class="pre">non_max_suppression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conf_thres</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iou_thres</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.45</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agnostic</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_label</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">tuple</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#non_max_suppression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.non_max_suppression" title="Permalink to this definition"></a></dt>
+<dd><p>Runs Non-Maximum Suppression (NMS) on inference results</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prediction</strong> (<em>torch.Tensor</em>) – output of prediction model</p></li>
+<li><p><strong>conf_thres</strong> (<em>float</em><em>, </em><em>optional</em>) – Confidence threshold. Defaults to 0.25.</p></li>
+<li><p><strong>iou_thres</strong> (<em>float</em><em>, </em><em>optional</em>) – IoU threshold. Defaults to 0.45.</p></li>
+<li><p><strong>classes</strong> (<em>int</em><em>, </em><em>optional</em>) – class index. Defaults to None.</p></li>
+<li><p><strong>agnostic</strong> (<em>bool</em><em>, </em><em>optional</em>) – [description]. Defaults to False.</p></li>
+<li><p><strong>multi_label</strong> (<em>bool</em><em>, </em><em>optional</em>) – [description]. Defaults to False.</p></li>
+<li><p><strong>labels</strong> (<em>tuple</em><em>, </em><em>optional</em>) – name of classes. Defaults to ().</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of detections, on (n,6)
+tensor per image [xyxy, conf, cls]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[torch.Tensor]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.scale_coords">
+<span class="sig-name descname"><span class="pre">scale_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img1_shape</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img0_shape</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio_pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#scale_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.scale_coords" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.utils.xywh2xyxy">
+<span class="sig-name descname"><span class="pre">xywh2xyxy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/utils.html#xywh2xyxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.utils.xywh2xyxy" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-table_reconstruction.table_detection.yolov5.models.yolo">
+<span id="table-reconstruction-table-detection-yolov5-models-yolo-module"></span><h2>table_reconstruction.table_detection.yolov5.models.yolo module<a class="headerlink" href="#module-table_reconstruction.table_detection.yolov5.models.yolo" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Detect">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Detect</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Detect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Detect" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Detect.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Detect.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Detect.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Detect.export">
+<span class="sig-name descname"><span class="pre">export</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Detect.export" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Detect.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Detect.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Detect.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Detect.stride">
+<span class="sig-name descname"><span class="pre">stride</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Detect.stride" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Detect.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Detect.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Model">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">Model</span></span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Model" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.modules.module.Module</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Model.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'yolov5s.yaml'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Model.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Model.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Model.autoshape">
+<span class="sig-name descname"><span class="pre">autoshape</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Model.autoshape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Model.autoshape" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Model.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">augment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Model.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Model.forward" title="Permalink to this definition"></a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Model.forward_once">
+<span class="sig-name descname"><span class="pre">forward_once</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Model.forward_once"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Model.forward_once" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Model.fuse">
+<span class="sig-name descname"><span class="pre">fuse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Model.fuse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Model.fuse" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Model.nms">
+<span class="sig-name descname"><span class="pre">nms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#Model.nms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Model.nms" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.Model.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.Model.training" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.table_detection.yolov5.models.yolo.parse_model">
+<span class="sig-name descname"><span class="pre">parse_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/table_detection/yolov5/models/yolo.html#parse_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.table_detection.yolov5.models.yolo.parse_model" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-table_reconstruction.table_detection.yolov5.models">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-table_reconstruction.table_detection.yolov5.models" title="Permalink to this headline"></a></h2>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Sun* Research.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

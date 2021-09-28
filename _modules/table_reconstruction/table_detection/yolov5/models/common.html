@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table_reconstruction.table_detection.yolov5.models.common &mdash; Table Reconstuction  documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/jquery.js"></script>
+        <script src="../../../../../_static/underscore.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../../index.html" class="icon icon-home"> Table Reconstuction
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">Table Reconstuction</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../../../table_reconstruction.html">table_reconstruction</a> &raquo;</li>
+      <li>table_reconstruction.table_detection.yolov5.models.common</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for table_reconstruction.table_detection.yolov5.models.common</h1><div class="highlight"><pre>
+<span></span><span class="c1"># YOLOv5 common modules</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">from</span> <span class="nn">torch.cuda</span> <span class="kn">import</span> <span class="n">amp</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">non_max_suppression</span>
+
+
+<div class="viewcode-block" id="autopad"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.autopad">[docs]</a><span class="k">def</span> <span class="nf">autopad</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># kernel, padding</span>
+    <span class="c1"># Pad to &#39;same&#39;</span>
+    <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">k</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">x</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">k</span><span class="p">]</span>  <span class="c1"># auto-pad</span>
+    <span class="k">return</span> <span class="n">p</span></div>
+
+
+<div class="viewcode-block" id="DWConv"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.DWConv">[docs]</a><span class="k">def</span> <span class="nf">DWConv</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">act</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="c1"># Depthwise convolution</span>
+    <span class="k">return</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">gcd</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">),</span> <span class="n">act</span><span class="o">=</span><span class="n">act</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Conv"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Conv">[docs]</a><span class="k">class</span> <span class="nc">Conv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># Standard convolution</span>
+<div class="viewcode-block" id="Conv.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Conv.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">act</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>  <span class="c1"># ch_in, ch_out, kernel, stride, padding, groups</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Conv</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">autopad</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">p</span><span class="p">),</span> <span class="n">groups</span><span class="o">=</span><span class="n">g</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">act</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">SiLU</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">act</span> <span class="ow">is</span> <span class="kc">True</span>
+            <span class="k">else</span> <span class="p">(</span><span class="n">act</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">act</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="k">else</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">())</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Conv.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Conv.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="Conv.fuseforward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Conv.fuseforward">[docs]</a>    <span class="k">def</span> <span class="nf">fuseforward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="Bottleneck"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Bottleneck">[docs]</a><span class="k">class</span> <span class="nc">Bottleneck</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># Standard bottleneck</span>
+<div class="viewcode-block" id="Bottleneck.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Bottleneck.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">shortcut</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="mf">0.5</span>
+    <span class="p">):</span>  <span class="c1"># ch_in, ch_out, shortcut, groups, expansion</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Bottleneck</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">c_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c2</span> <span class="o">*</span> <span class="n">e</span><span class="p">)</span>  <span class="c1"># hidden channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv1</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c_</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add</span> <span class="o">=</span> <span class="n">shortcut</span> <span class="ow">and</span> <span class="n">c1</span> <span class="o">==</span> <span class="n">c2</span></div>
+
+<div class="viewcode-block" id="Bottleneck.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Bottleneck.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="BottleneckCSP"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP">[docs]</a><span class="k">class</span> <span class="nc">BottleneckCSP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks</span>
+<div class="viewcode-block" id="BottleneckCSP.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shortcut</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="mf">0.5</span>
+    <span class="p">):</span>  <span class="c1"># ch_in, ch_out, number, shortcut, groups, expansion</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BottleneckCSP</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">c_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c2</span> <span class="o">*</span> <span class="n">e</span><span class="p">)</span>  <span class="c1"># hidden channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv1</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv3</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">c_</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv4</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c_</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c_</span><span class="p">)</span>  <span class="c1"># applied to cat(cv2, cv3)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">act</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LeakyReLU</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="o">*</span><span class="p">[</span><span class="n">Bottleneck</span><span class="p">(</span><span class="n">c_</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="n">shortcut</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BottleneckCSP.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.BottleneckCSP.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv3</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv1</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+        <span class="n">y2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv4</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y1</span><span class="p">,</span> <span class="n">y2</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))))</span></div></div>
+
+
+<div class="viewcode-block" id="C3"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.C3">[docs]</a><span class="k">class</span> <span class="nc">C3</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># CSP Bottleneck with 3 convolutions</span>
+<div class="viewcode-block" id="C3.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.C3.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">shortcut</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="mf">0.5</span>
+    <span class="p">):</span>  <span class="c1"># ch_in, ch_out, number, shortcut, groups, expansion</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">C3</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">c_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c2</span> <span class="o">*</span> <span class="n">e</span><span class="p">)</span>  <span class="c1"># hidden channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv1</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv3</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c_</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># act=FReLU(c2)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="o">*</span><span class="p">[</span><span class="n">Bottleneck</span><span class="p">(</span><span class="n">c_</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="n">shortcut</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="C3.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.C3.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv3</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cv1</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="SPP"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.SPP">[docs]</a><span class="k">class</span> <span class="nc">SPP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># Spatial pyramid pooling layer used in YOLOv3-SPP</span>
+<div class="viewcode-block" id="SPP.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.SPP.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">13</span><span class="p">)):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SPP</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">c_</span> <span class="o">=</span> <span class="n">c1</span> <span class="o">//</span> <span class="mi">2</span>  <span class="c1"># hidden channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv1</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c_</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c_</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">c2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">x</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">k</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SPP.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.SPP.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cv2</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">m</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="Focus"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Focus">[docs]</a><span class="k">class</span> <span class="nc">Focus</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># Focus wh information into c-space</span>
+<div class="viewcode-block" id="Focus.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Focus.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">act</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>  <span class="c1"># ch_in, ch_out, kernel, stride, padding, groups</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Focus</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">Conv</span><span class="p">(</span><span class="n">c1</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">act</span><span class="p">)</span></div>
+        <span class="c1"># self.contract = Contract(gain=2)</span>
+
+<div class="viewcode-block" id="Focus.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Focus.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>  <span class="c1"># x(b,c,w,h) -&gt; y(b,4c,w/2,h/2)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span>
+                <span class="p">],</span>
+                <span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span></div></div>
+        <span class="c1"># return self.conv(self.contract(x))</span>
+
+
+<div class="viewcode-block" id="Contract"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Contract">[docs]</a><span class="k">class</span> <span class="nc">Contract</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># Contract width-height into channels, i.e. x(1,64,80,80) to x(1,256,40,40)</span>
+<div class="viewcode-block" id="Contract.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Contract.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gain</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gain</span> <span class="o">=</span> <span class="n">gain</span></div>
+
+<div class="viewcode-block" id="Contract.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Contract.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="p">(</span>
+            <span class="n">N</span><span class="p">,</span>
+            <span class="n">C</span><span class="p">,</span>
+            <span class="n">H</span><span class="p">,</span>
+            <span class="n">W</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>  <span class="c1"># assert (H / s == 0) and (W / s == 0), &#39;Indivisible gain&#39;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gain</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">H</span> <span class="o">//</span> <span class="n">s</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">W</span> <span class="o">//</span> <span class="n">s</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>  <span class="c1"># x(1,64,40,2,40,2)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>  <span class="c1"># x(1,2,2,64,40,40)</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">C</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span><span class="p">,</span> <span class="n">H</span> <span class="o">//</span> <span class="n">s</span><span class="p">,</span> <span class="n">W</span> <span class="o">//</span> <span class="n">s</span><span class="p">)</span>  <span class="c1"># x(1,256,40,40)</span></div></div>
+
+
+<div class="viewcode-block" id="Expand"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Expand">[docs]</a><span class="k">class</span> <span class="nc">Expand</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># Expand channels into width-height, i.e. x(1,64,80,80) to x(1,16,160,160)</span>
+<div class="viewcode-block" id="Expand.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Expand.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gain</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gain</span> <span class="o">=</span> <span class="n">gain</span></div>
+
+<div class="viewcode-block" id="Expand.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Expand.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">N</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>  <span class="c1"># assert C / s ** 2 == 0, &#39;Indivisible gain&#39;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gain</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">C</span> <span class="o">//</span> <span class="n">s</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span>  <span class="c1"># x(1,2,2,16,80,80)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>  <span class="c1"># x(1,16,80,2,80,2)</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">C</span> <span class="o">//</span> <span class="n">s</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">H</span> <span class="o">*</span> <span class="n">s</span><span class="p">,</span> <span class="n">W</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>  <span class="c1"># x(1,16,160,160)</span></div></div>
+
+
+<div class="viewcode-block" id="Concat"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Concat">[docs]</a><span class="k">class</span> <span class="nc">Concat</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># Concatenate a list of tensors along dimension</span>
+<div class="viewcode-block" id="Concat.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Concat.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Concat</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">dimension</span></div>
+
+<div class="viewcode-block" id="Concat.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.Concat.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">d</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="NMS"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.NMS">[docs]</a><span class="k">class</span> <span class="nc">NMS</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># Non-Maximum Suppression (NMS) module</span>
+    <span class="n">conf</span> <span class="o">=</span> <span class="mf">0.25</span>  <span class="c1"># confidence threshold</span>
+    <span class="n">iou</span> <span class="o">=</span> <span class="mf">0.45</span>  <span class="c1"># IoU threshold</span>
+    <span class="n">classes</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (optional list) filter by class</span>
+
+<div class="viewcode-block" id="NMS.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.NMS.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NMS</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="NMS.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.NMS.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">non_max_suppression</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">conf_thres</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conf</span><span class="p">,</span> <span class="n">iou_thres</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">iou</span><span class="p">,</span> <span class="n">classes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">classes</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="autoShape"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.autoShape">[docs]</a><span class="k">class</span> <span class="nc">autoShape</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="n">conf</span> <span class="o">=</span> <span class="mf">0.25</span>  <span class="c1"># NMS confidence threshold</span>
+    <span class="n">iou</span> <span class="o">=</span> <span class="mf">0.45</span>  <span class="c1"># NMS IoU threshold</span>
+    <span class="n">classes</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (optional list) filter by class</span>
+
+<div class="viewcode-block" id="autoShape.__init__"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.autoShape.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">autoShape</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="autoShape.autoshape"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.autoShape.autoshape">[docs]</a>    <span class="k">def</span> <span class="nf">autoshape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;autoShape already enabled, skipping... &quot;</span>
+        <span class="p">)</span>  <span class="c1"># model already converted to model.autoshape()</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="autoShape.forward"><a class="viewcode-back" href="../../../../../table_reconstruction.table_detection.yolov5.models.html#table_reconstruction.table_detection.yolov5.models.common.autoShape.forward">[docs]</a>    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imgs</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">640</span><span class="p">,</span> <span class="n">augment</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>  <span class="c1"># for device and type</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">imgs</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>  <span class="c1"># torch</span>
+            <span class="k">with</span> <span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span>
+                    <span class="n">imgs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">type_as</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">augment</span><span class="p">,</span> <span class="n">profile</span>
+                <span class="p">)</span>  <span class="c1"># inference</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Sun* Research.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table_reconstruction.table_detection.detector &mdash; Table Reconstuction  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Table Reconstuction
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Table Reconstuction</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../table_reconstruction.html">table_reconstruction</a> &raquo;</li>
+      <li>table_reconstruction.table_detection.detector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for table_reconstruction.table_detection.detector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">.yolov5.models.utils</span> <span class="kn">import</span> <span class="n">non_max_suppression</span><span class="p">,</span> <span class="n">scale_coords</span>
+<span class="kn">from</span> <span class="nn">.preprocess</span> <span class="kn">import</span> <span class="n">create_batch</span><span class="p">,</span> <span class="n">process_image</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">DETECTOR_WEIGHT_URL</span><span class="p">,</span> <span class="n">download_weight</span><span class="p">,</span> <span class="n">load_yolo_model</span><span class="p">,</span> <span class="n">select_device</span>
+<span class="kn">from</span> <span class="nn">.yolov5.models.utils</span> <span class="kn">import</span> <span class="n">letterbox</span>
+
+<span class="n">DIR_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="n">MODEL_PATH</span> <span class="o">=</span> <span class="n">DIR_PATH</span> <span class="o">+</span> <span class="s2">&quot;/tmp/model_table_detect.pt&quot;</span>
+
+
+<div class="viewcode-block" id="TableDetector"><a class="viewcode-back" href="../../../table_reconstruction.table_detection.html#table_reconstruction.table_detection.detector.TableDetector">[docs]</a><span class="k">class</span> <span class="nc">TableDetector</span><span class="p">:</span>
+<div class="viewcode-block" id="TableDetector.__init__"><a class="viewcode-back" href="../../../table_reconstruction.table_detection.html#table_reconstruction.table_detection.detector.TableDetector.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+        <span class="n">conf_thres</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.85</span><span class="p">,</span>
+        <span class="n">iou_thres</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The constructor of class TableDetector which creates object</span>
+<span class="sd">            for detcting table regions in pdf page images</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model_path (str, optional): Path to weights file. Defaults to None.</span>
+<span class="sd">            device (str, optional): Device where model will be allocated on.</span>
+<span class="sd">            Defaults to &quot;cpu&quot;.</span>
+<span class="sd">            conf_thres (float, optional): Confidence threshold. Defaults to 0.85.</span>
+<span class="sd">            iou_thres (float, optional): IoU threshold. Defaults to 0.3.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Run first time when using</span>
+        <span class="k">if</span> <span class="n">model_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">MODEL_PATH</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Obtain weights of model ...&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">DIR_PATH</span> <span class="o">+</span> <span class="s2">&quot;/tmp/&quot;</span><span class="p">):</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">DIR_PATH</span> <span class="o">+</span> <span class="s2">&quot;/tmp/&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Downloading weight from google drive&quot;</span><span class="p">)</span>
+                    <span class="n">download_weight</span><span class="p">(</span><span class="n">DETECTOR_WEIGHT_URL</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">MODEL_PATH</span><span class="p">),</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Could not download weight, please try again!&quot;</span><span class="p">)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error code: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;An error occured while downloading weight file&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">load_yolo_model</span><span class="p">(</span><span class="n">MODEL_PATH</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">model_path</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">=</span> <span class="n">load_yolo_model</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find weights file at </span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">select_device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using </span><span class="si">{}</span><span class="s2"> for table detection&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_size</span> <span class="o">=</span> <span class="mi">640</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conf_thres</span> <span class="o">=</span> <span class="n">conf_thres</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iou_thres</span> <span class="o">=</span> <span class="n">iou_thres</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_func_</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">process_image</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TableDetector.predict"><a class="viewcode-back" href="../../../table_reconstruction.table_detection.html#table_reconstruction.table_detection.detector.TableDetector.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">list</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of bounding boxes [xmin, ymin, xmax, ymax] for</span>
+<span class="sd">        each image in image_list</span>
+<span class="sd">        Each element in the list is a numpy array of shape N x 4</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image_list (List[np.array]): input images</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            [List[list]]: output bounding boxes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batches</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">create_batch</span><span class="p">(</span>
+            <span class="n">image_list</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">image_list</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">origin_images</span> <span class="ow">in</span> <span class="n">batches</span><span class="p">:</span>
+            <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">letterbox</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">640</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">32</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">origin_images</span><span class="p">]</span>
+            <span class="n">images</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">process_func_</span><span class="p">,</span> <span class="n">images</span><span class="p">))</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">images</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">tensor</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">all_boxes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="n">non_max_suppression</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.30</span><span class="p">,</span> <span class="n">classes</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">agnostic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">det</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pred</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">det</span><span class="p">):</span>
+                    <span class="n">det</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_coords</span><span class="p">(</span>
+                        <span class="n">images</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">det</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="n">origin_images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">()</span>
+                    <span class="n">det</span> <span class="o">=</span> <span class="n">det</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">4</span><span class="p">]</span>
+                    <span class="n">all_boxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">det</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">all_boxes</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+
+            <span class="n">predictions</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">all_boxes</span><span class="p">)</span>
+
+        <span class="n">z</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+        <span class="n">sorted_result</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">predictions</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">sorted_result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Sun* Research.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

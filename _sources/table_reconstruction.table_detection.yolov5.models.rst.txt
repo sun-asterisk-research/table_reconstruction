@@ -1,0 +1,45 @@
+table\_reconstruction.table\_detection.yolov5.models package
+============================================================
+
+Submodules
+----------
+
+table\_reconstruction.table\_detection.yolov5.models.common module
+------------------------------------------------------------------
+
+.. automodule:: table_reconstruction.table_detection.yolov5.models.common
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.table\_detection.yolov5.models.experimental module
+------------------------------------------------------------------------
+
+.. automodule:: table_reconstruction.table_detection.yolov5.models.experimental
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.table\_detection.yolov5.models.utils module
+-----------------------------------------------------------------
+
+.. automodule:: table_reconstruction.table_detection.yolov5.models.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.table\_detection.yolov5.models.yolo module
+----------------------------------------------------------------
+
+.. automodule:: table_reconstruction.table_detection.yolov5.models.yolo
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: table_reconstruction.table_detection.yolov5.models
+   :members:
+   :undoc-members:
+   :show-inheritance:

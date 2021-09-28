@@ -1,0 +1,29 @@
+table\_reconstruction.line\_segmentation.unet package
+=====================================================
+
+Submodules
+----------
+
+table\_reconstruction.line\_segmentation.unet.resunet module
+------------------------------------------------------------
+
+.. automodule:: table_reconstruction.line_segmentation.unet.resunet
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.line\_segmentation.unet.unet\_parts module
+----------------------------------------------------------------
+
+.. automodule:: table_reconstruction.line_segmentation.unet.unet_parts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: table_reconstruction.line_segmentation.unet
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,37 @@
+table\_reconstruction.line\_segmentation package
+================================================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   table_reconstruction.line_segmentation.unet
+
+Submodules
+----------
+
+table\_reconstruction.line\_segmentation.line\_segment module
+-------------------------------------------------------------
+
+.. automodule:: table_reconstruction.line_segmentation.line_segment
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.line\_segmentation.utils module
+-----------------------------------------------------
+
+.. automodule:: table_reconstruction.line_segmentation.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: table_reconstruction.line_segmentation
+   :members:
+   :undoc-members:
+   :show-inheritance:

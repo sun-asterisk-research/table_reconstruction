@@ -1,0 +1,21 @@
+table\_reconstruction package
+=============================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   table_reconstruction.line_segmentation
+   table_reconstruction.output
+   table_reconstruction.table_detection
+   table_reconstruction.utils
+
+Module contents
+---------------
+
+.. automodule:: table_reconstruction
+   :members:
+   :undoc-members:
+   :show-inheritance:

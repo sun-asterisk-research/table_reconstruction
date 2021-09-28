@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table_reconstruction.utils package &mdash; Table Reconstuction  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Table Reconstuction
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">table_reconstruction.utils package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.utils.cell_utils">table_reconstruction.utils.cell_utils module</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.utils.lines_utils">table_reconstruction.utils.lines_utils module</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.utils.mask_utils">table_reconstruction.utils.mask_utils module</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.utils.table_utils">table_reconstruction.utils.table_utils module</a></li>
+<li><a class="reference internal" href="#module-table_reconstruction.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Table Reconstuction</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>table_reconstruction.utils package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/table_reconstruction.utils.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="table-reconstruction-utils-package">
+<h1>table_reconstruction.utils package<a class="headerlink" href="#table-reconstruction-utils-package" title="Permalink to this headline"></a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline"></a></h2>
+</div>
+<div class="section" id="module-table_reconstruction.utils.cell_utils">
+<span id="table-reconstruction-utils-cell-utils-module"></span><h2>table_reconstruction.utils.cell_utils module<a class="headerlink" href="#module-table_reconstruction.utils.cell_utils" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.cell_utils.calculate_cell_coordinate">
+<span class="sig-name descname"><span class="pre">calculate_cell_coordinate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fake_flag</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/cell_utils.html#calculate_cell_coordinate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.cell_utils.calculate_cell_coordinate" title="Permalink to this definition"></a></dt>
+<dd><p>This is a function which find the coordinate of cells in table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>otherwise find the real coordinate of</em>) – The list of the coordinate of intersection points</p></li>
+<li><p><strong>fake_flag</strong> (<em>Bool</em>) – if True, this method extract fake the coordinate of points,</p></li>
+<li><p><strong>points</strong> – </p></li>
+<li><p><strong>ths</strong> (<em>int</em>) – The threshold value to find the coordinate of point o</p></li>
+<li><p><strong>5.</strong> (<em>n y-axis which is nearest to top left point. Defaults to</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The coordinate of cells.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[List]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.cell_utils.get_bottom_right_corner">
+<span class="sig-name descname"><span class="pre">get_bottom_right_corner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred_point</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/cell_utils.html#get_bottom_right_corner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.cell_utils.get_bottom_right_corner" title="Permalink to this definition"></a></dt>
+<dd><p>This is a function which find the coordinates of bottom right point of
+a cell by coordinate of top left point</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred_point</strong> (<em>Tuple</em>) – The top left point has form (x, y)</p></li>
+<li><p><strong>points</strong> (<em>np.ndarray</em>) – The list of intersection points has form [[x, y]]</p></li>
+<li><p><strong>ths</strong> (<em>int</em><em>, </em><em>optional</em>) – The threshold to find the coordinate of point</p></li>
+<li><p><strong>5.</strong> (<em>on y-axis which is nearest to top left point. Defaults to</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The coordinate of bottom right point has form [x, y]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.cell_utils.get_intersection_points">
+<span class="sig-name descname"><span class="pre">get_intersection_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">horizontal_lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertical_lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tab_coord</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/cell_utils.html#get_intersection_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.cell_utils.get_intersection_points" title="Permalink to this definition"></a></dt>
+<dd><p>This a function which find the coordinate (x, y) of intersection points</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>horizontal_lines</strong> (<em>List</em><em>[</em><em>List</em><em>]</em>) – The coordinate of horizontal lines</p></li>
+<li><p><strong>vertical_lines</strong> (<em>List</em><em>[</em><em>List</em><em>]</em>) – The coordinate of vertical lines</p></li>
+<li><p><strong>tab_coord</strong> (<em>List</em>) – The coordinate of table</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>intersection and fake intersection points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple[np.ndarray, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.cell_utils.is_cell_existed">
+<span class="sig-name descname"><span class="pre">is_cell_existed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell_coord</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/cell_utils.html#is_cell_existed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.cell_utils.is_cell_existed" title="Permalink to this definition"></a></dt>
+<dd><p>This is a function to check whether the coordinate is
+the coordinate of an existing cell or not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cell_coord</strong> (<em>List</em><em>[</em><em>List</em><em>]</em>) – The coordinate of cell</p></li>
+<li><p><strong>thresh</strong> (<em>int</em>) – The threshold value to group line which has same x, y coordinate</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>returns True if the coordinate is the coordinate of an existing cell,
+otherwise returns False</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.cell_utils.predict_relation">
+<span class="sig-name descname"><span class="pre">predict_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/cell_utils.html#predict_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.cell_utils.predict_relation" title="Permalink to this definition"></a></dt>
+<dd><p>Extract relationship value between cells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cells</strong> (<em>List</em><em>[</em><em>List</em><em>]</em>) – The sorted coordinate of cells</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tuple contain id couples corrsponding to relationship value</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple[List, List]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.cell_utils.sort_cell">
+<span class="sig-name descname"><span class="pre">sort_cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/cell_utils.html#sort_cell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.cell_utils.sort_cell" title="Permalink to this definition"></a></dt>
+<dd><p>Sort cells from left to right and top to bottom</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cells</strong> (<em>List</em><em>[</em><em>List</em><em>]</em>) – The coordinate of cells.</p></li>
+<li><p><strong>ths</strong> (<em>int</em><em>, </em><em>optional</em>) – The threshold value to group cells has same y coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The sorted coordinate of cells</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[List]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-table_reconstruction.utils.lines_utils">
+<span id="table-reconstruction-utils-lines-utils-module"></span><h2>table_reconstruction.utils.lines_utils module<a class="headerlink" href="#module-table_reconstruction.utils.lines_utils" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.get_coordinates">
+<span class="sig-name descname"><span class="pre">get_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_len</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#get_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.get_coordinates" title="Permalink to this definition"></a></dt>
+<dd><p>This function extract the coordinate of table, horizontal and vertical lines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mask</strong> (<em>np.darray</em>) – A binary table image</p></li>
+<li><p><strong>ths</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold value to ignore the lines</p></li>
+<li><p><strong>coordinate</strong> (<em>has not same y coordinate for horizontal lines</em><em> or </em><em>x</em>) – </p></li>
+<li><p><strong>5.</strong> (<em>for vertical lines. Defaults to</em>) – </p></li>
+<li><p><strong>kernel_len</strong> (<em>int</em><em>, </em><em>optional</em>) – The size of kernel is applied.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – will be raised if the number of detected lines is not enough to
+    rebuild the table</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Tuple contain the coordinate of
+table, vertical and horizontal lines.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Tuple[List, np.ndarray, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.get_lines_coordinate">
+<span class="sig-name descname"><span class="pre">get_lines_coordinate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line_mask</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#get_lines_coordinate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.get_lines_coordinate" title="Permalink to this definition"></a></dt>
+<dd><p>Extract coordinate of line from  binary image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>line_mask</strong> (<em>np.ndarray</em>) – the line binary image</p></li>
+<li><p><strong>axis</strong> (<em>int</em>) – if axis=0, line_mask is horizontal lines binary image,</p></li>
+<li><p><strong>image.</strong> (<em>otherwise line_mask is vertical lines binary</em>) – </p></li>
+<li><p><strong>ths</strong> (<em>int</em><em>, </em><em>optional</em>) – The threshold value to ignore noise edge.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the coordinate of lines.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.get_table_coordinate">
+<span class="sig-name descname"><span class="pre">get_table_coordinate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hor_lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ver_lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#get_table_coordinate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.get_table_coordinate" title="Permalink to this definition"></a></dt>
+<dd><p>Extract the coordinate of table in image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hor_lines_coord</strong> (<em>np.ndarray</em>) – The coordinate of horizontal lines</p></li>
+<li><p><strong>ver_lines_coord</strong> (<em>np.ndarray</em>) – The coordinate of vertical lines</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The coordinat of table has form (xmin, ymin, xmax, ymax)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.get_table_line">
+<span class="sig-name descname"><span class="pre">get_table_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">binimg</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lineW</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#get_table_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.get_table_line" title="Permalink to this definition"></a></dt>
+<dd><p>Extract the coordinate of lines from table binary image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>binimg</strong> (<em>np.ndarray</em>) – Table binary image</p></li>
+<li><p><strong>axis</strong> (<em>int</em>) – if 0, extracted line is horizontal lines,</p></li>
+<li><p><strong>lines.</strong> (<em>otherwise extracted line is vertical</em>) – </p></li>
+<li><p><strong>lineW</strong> (<em>int</em><em>, </em><em>optional</em>) – The minimum line width. Defaults to 5.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The coordinate of extracted line.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[List]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.image_location_sort_box">
+<span class="sig-name descname"><span class="pre">image_location_sort_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">box</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#image_location_sort_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.image_location_sort_box" title="Permalink to this definition"></a></dt>
+<dd><p>Sort and extract the coordinate of points</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>box</strong> (<em>List</em>) – the coordinate of region</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the sorted coordinate of region</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.is_line">
+<span class="sig-name descname"><span class="pre">is_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#is_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.is_line" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether the coordinate is the coordinate of an existing line or not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>line</strong> (<em>List</em>) – The coordinate of line</p></li>
+<li><p><strong>lines</strong> (<em>np.ndarray</em>) – The coordinate of lines</p></li>
+<li><p><strong>axis</strong> (<em>int</em>) – If axis == 0 lines is horizontal line, otherwise vertical lines.</p></li>
+<li><p><strong>thresh</strong> (<em>float</em>) – The threshold value to group line which has same x, y coordinate</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>returns True if the coordinate is coordinate of an existing line,
+otherwise returns False</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.min_area_rect">
+<span class="sig-name descname"><span class="pre">min_area_rect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#min_area_rect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.min_area_rect" title="Permalink to this definition"></a></dt>
+<dd><p>Get coordinate of line</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coords</strong> (<em>ndarray</em>) – Coordinate list (row, col) of the region. has shape (N, 2)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The coordinate of line</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.normalize_v1">
+<span class="sig-name descname"><span class="pre">normalize_v1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#normalize_v1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.normalize_v1" title="Permalink to this definition"></a></dt>
+<dd><p>Normalize the coordinate of vertical lines or horizontal lines</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lines</strong> (<em>List</em><em>[</em><em>List</em><em>]</em>) – The coordinate of horizontal lines or vertical lines.</p></li>
+<li><p><strong>axis</strong> (<em>int</em>) – If 0, lines is horizontal lines, otherwise vertical lines.</p></li>
+<li><p><strong>ths</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold value to group the lines</p></li>
+<li><p><strong>coordinate.</strong> (<em>has same x</em><em> or </em><em>y</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The normalized coordinate of lines.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.normalize_v2">
+<span class="sig-name descname"><span class="pre">normalize_v2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ver_lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hor_lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#normalize_v2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.normalize_v2" title="Permalink to this definition"></a></dt>
+<dd><p>Normalize the coordinate between vertical lines and horizontal lines</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ver_lines_coord</strong> (<em>np.ndarray</em>) – The coordinate of vertical lines</p></li>
+<li><p><strong>hor_lines_coord</strong> (<em>np.ndarray</em>) – The coordinate of horizontal lines</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the normalized coordinate of
+horizontal and vertical lines</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple(np.ndarray, np.ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.remove_noise">
+<span class="sig-name descname"><span class="pre">remove_noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hor_lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ver_lines</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_edge_ths</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#remove_noise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.remove_noise" title="Permalink to this definition"></a></dt>
+<dd><p>Remove noise edge from image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hor_lines</strong> (<em>np.ndarray</em>) – The coordinate of horizontal lines</p></li>
+<li><p><strong>ver_lines</strong> (<em>np.ndarray</em>) – The coordinate of vertical lines</p></li>
+<li><p><strong>ths</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold value to group lines which has same coordinate.</p></li>
+<li><p><strong>noise_edge_ths</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold value check whether</p></li>
+<li><p><strong>not.</strong> (<em>the line is noise edge or</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The coordinate of horizontal and vertical lines.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple[np.ndarray, np.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.lines_utils.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">box</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/lines_utils.html#solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.lines_utils.solve" title="Permalink to this definition"></a></dt>
+<dd><p>Caculate angle, width, height, the center coordinate of box</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>box</strong> (<em>List</em>) – the coordinate of region</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(angle, width, height, center x, center y)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple[int, int, int, int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-table_reconstruction.utils.mask_utils">
+<span id="table-reconstruction-utils-mask-utils-module"></span><h2>table_reconstruction.utils.mask_utils module<a class="headerlink" href="#module-table_reconstruction.utils.mask_utils" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.mask_utils.get_hor_lines_mask">
+<span class="sig-name descname"><span class="pre">get_hor_lines_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_len</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/mask_utils.html#get_hor_lines_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.mask_utils.get_hor_lines_mask" title="Permalink to this definition"></a></dt>
+<dd><p>Get binary image which contain only horizontal lines</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mask</strong> (<em>np.ndarray</em>) – binary image of original image</p></li>
+<li><p><strong>kernel_len</strong> (<em>int</em>) – kernel size in cv2.getStructuringElement method</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>binary image contain only horizontal lines</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.mask_utils.get_ver_lines_mask">
+<span class="sig-name descname"><span class="pre">get_ver_lines_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_len</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/mask_utils.html#get_ver_lines_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.mask_utils.get_ver_lines_mask" title="Permalink to this definition"></a></dt>
+<dd><p>Get binary image which contain only vertical lines</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mask</strong> (<em>np.ndarray</em>) – the binary image of table (H, W, C)</p></li>
+<li><p><strong>kernel_len</strong> (<em>int</em>) – kernel size in cv2.getStructuringElement method</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>binary image contain only vertical lines</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.mask_utils.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_img</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/mask_utils.html#normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.mask_utils.normalize" title="Permalink to this definition"></a></dt>
+<dd><p>Convert shape of mask image to shape of input image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img</strong> (<em>np.ndarray</em>) – input image has shape of (H, W, C)</p></li>
+<li><p><strong>mask_img</strong> (<em>np.ndarray</em>) – binary image of original image has shape (H1, W1, C1)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>binary image of original image has shape (H, W, C)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-table_reconstruction.utils.table_utils">
+<span id="table-reconstruction-utils-table-utils-module"></span><h2>table_reconstruction.utils.table_utils module<a class="headerlink" href="#module-table_reconstruction.utils.table_utils" title="Permalink to this headline"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.DirectedGraph">
+<em class="property"><span class="pre">class</span> </em><span class="sig-name descname"><span class="pre">DirectedGraph</span></span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#DirectedGraph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.DirectedGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.DirectedGraph.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nb_vertices</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#DirectedGraph.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.DirectedGraph.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize DirectedGraph class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nb_vertices</strong> (<em>int</em>) – the number of vertices</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.DirectedGraph.add_edge">
+<span class="sig-name descname"><span class="pre">add_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id_a</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_b</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#DirectedGraph.add_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.DirectedGraph.add_edge" title="Permalink to this definition"></a></dt>
+<dd><p>Add edge to graph</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id_a</strong> (<em>int</em>) – Index of cell a</p></li>
+<li><p><strong>id_b</strong> (<em>int</em>) – Index of cell b</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.DirectedGraph.add_edges">
+<span class="sig-name descname"><span class="pre">add_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">couple_ids</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#DirectedGraph.add_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.DirectedGraph.add_edges" title="Permalink to this definition"></a></dt>
+<dd><p>Add index of vertices (cell) to graph</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>couple_ids</strong> (<em>List</em>) – the list index of couple vertice indexes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.DirectedGraph.check_span_cell">
+<span class="sig-name descname"><span class="pre">check_span_cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex_id</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#DirectedGraph.check_span_cell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.DirectedGraph.check_span_cell" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether cell is span cell or not</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>vertex_id</strong> (<em>int</em>) – the index of cell</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>if cell is span cell, return True, otherwise return False</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.DirectedGraph.dfs">
+<span class="sig-name descname"><span class="pre">dfs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dp</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vis</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#DirectedGraph.dfs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.DirectedGraph.dfs" title="Permalink to this definition"></a></dt>
+<dd><p>Use Depth First Search algorithm to search longest path from specific vertex.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v</strong> (<em>int</em>) – the index of specific cell</p></li>
+<li><p><strong>dp</strong> (<em>List</em>) – distances to all vertices</p></li>
+<li><p><strong>vis</strong> (<em>List</em>) – visited status</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.DirectedGraph.findLongestPath">
+<span class="sig-name descname"><span class="pre">findLongestPath</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#DirectedGraph.findLongestPath"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.DirectedGraph.findLongestPath" title="Permalink to this definition"></a></dt>
+<dd><p>Function that returns the longest path in graph</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the maximum distance</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.convertId2DocxCoord">
+<span class="sig-name descname"><span class="pre">convertId2DocxCoord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell_id</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_col</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#convertId2DocxCoord"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.convertId2DocxCoord" title="Permalink to this definition"></a></dt>
+<dd><p>Find the XY coordinate of a know point</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cell_id</strong> (<em>int</em>) – the index of cell</p></li>
+<li><p><strong>nb_col</strong> (<em>int</em>) – the number columns of table</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the XY coordinate corresponding to the index of cell</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="table_reconstruction.utils.table_utils.convertSpanCell2DocxCoord">
+<span class="sig-name descname"><span class="pre">convertSpanCell2DocxCoord</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fake_cells</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">span_cell_ids</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_col</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/table_reconstruction/utils/table_utils.html#convertSpanCell2DocxCoord"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#table_reconstruction.utils.table_utils.convertSpanCell2DocxCoord" title="Permalink to this definition"></a></dt>
+<dd><p>Find the XY coordinate of span cells</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cells</strong> (<em>List</em><em>[</em><em>List</em><em>]</em>) – the coordinate of cells</p></li>
+<li><p><strong>fake_cells</strong> (<em>List</em><em>[</em><em>List</em><em>]</em>) – the coordinate of fake cells</p></li>
+<li><p><strong>span_cell_ids</strong> (<em>List</em>) – the index of span cells</p></li>
+<li><p><strong>nb_col</strong> (<em>int</em>) – number columns in table</p></li>
+<li><p><strong>thresh</strong> (<em>int</em><em>, </em><em>optional</em>) – threshold value to group the same x, y coordinate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the XY coordinate of span cells</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-table_reconstruction.utils">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-table_reconstruction.utils" title="Permalink to this headline"></a></h2>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Sun* Research.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

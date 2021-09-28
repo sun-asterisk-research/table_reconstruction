@@ -1,0 +1,45 @@
+table\_reconstruction.table\_detection package
+==============================================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   table_reconstruction.table_detection.yolov5
+
+Submodules
+----------
+
+table\_reconstruction.table\_detection.detector module
+------------------------------------------------------
+
+.. automodule:: table_reconstruction.table_detection.detector
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.table\_detection.preprocess module
+--------------------------------------------------------
+
+.. automodule:: table_reconstruction.table_detection.preprocess
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.table\_detection.utils module
+---------------------------------------------------
+
+.. automodule:: table_reconstruction.table_detection.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: table_reconstruction.table_detection
+   :members:
+   :undoc-members:
+   :show-inheritance:

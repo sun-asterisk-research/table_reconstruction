@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table_reconstruction.utils.lines_utils &mdash; Table Reconstuction  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Table Reconstuction
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Table Reconstuction</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../table_reconstruction.html">table_reconstruction</a> &raquo;</li>
+      <li>table_reconstruction.utils.lines_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for table_reconstruction.utils.lines_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">distance</span> <span class="k">as</span> <span class="n">dist</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">measure</span>
+
+<span class="kn">from</span> <span class="nn">.mask_utils</span> <span class="kn">import</span> <span class="n">get_hor_lines_mask</span><span class="p">,</span> <span class="n">get_ver_lines_mask</span>
+
+
+<div class="viewcode-block" id="get_table_line"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.get_table_line">[docs]</a><span class="k">def</span> <span class="nf">get_table_line</span><span class="p">(</span><span class="n">binimg</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lineW</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Extract the coordinate of lines from table binary image</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        binimg (np.ndarray): Table binary image</span>
+<span class="sd">        axis (int): if 0, extracted line is horizontal lines,</span>
+<span class="sd">        otherwise extracted line is vertical lines.</span>
+<span class="sd">        lineW (int, optional): The minimum line width. Defaults to 5.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[List]: The coordinate of extracted line.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">measure</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="n">binimg</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">connectivity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">regions</span> <span class="o">=</span> <span class="n">measure</span><span class="o">.</span><span class="n">regionprops</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+
+    <span class="n">lineboxes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">bbox</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">line</span><span class="o">.</span><span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">lineW</span><span class="p">:</span>
+                <span class="n">lineboxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_area_rect</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">coords</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">bbox</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">line</span><span class="o">.</span><span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">lineW</span><span class="p">:</span>
+                <span class="n">lineboxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_area_rect</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">coords</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">lineboxes</span></div>
+
+
+<div class="viewcode-block" id="min_area_rect"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.min_area_rect">[docs]</a><span class="k">def</span> <span class="nf">min_area_rect</span><span class="p">(</span><span class="n">coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Get coordinate of line</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        coords (ndarray): Coordinate list (row, col) of the region. has shape (N, 2)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List: The coordinate of line</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rect</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">minAreaRect</span><span class="p">(</span><span class="n">coords</span><span class="p">[:,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">box</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">boxPoints</span><span class="p">(</span><span class="n">rect</span><span class="p">)</span>
+    <span class="n">box</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">8</span><span class="p">,))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="n">box</span> <span class="o">=</span> <span class="n">image_location_sort_box</span><span class="p">(</span><span class="n">box</span><span class="p">)</span>
+
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">,</span> <span class="n">x4</span><span class="p">,</span> <span class="n">y4</span> <span class="o">=</span> <span class="n">box</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">solve</span><span class="p">(</span><span class="n">box</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">w</span> <span class="o">&lt;</span> <span class="n">h</span><span class="p">:</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span> <span class="o">+</span> <span class="n">x2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">xmax</span> <span class="o">=</span> <span class="p">(</span><span class="n">x3</span> <span class="o">+</span> <span class="n">x4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="p">(</span><span class="n">y1</span> <span class="o">+</span> <span class="n">y2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">ymax</span> <span class="o">=</span> <span class="p">(</span><span class="n">y3</span> <span class="o">+</span> <span class="n">y4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">xmin</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span> <span class="o">+</span> <span class="n">x4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">xmax</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span> <span class="o">+</span> <span class="n">x3</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="p">(</span><span class="n">y1</span> <span class="o">+</span> <span class="n">y4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">ymax</span> <span class="o">=</span> <span class="p">(</span><span class="n">y2</span> <span class="o">+</span> <span class="n">y3</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="solve"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.solve">[docs]</a><span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="n">box</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Caculate angle, width, height, the center coordinate of box</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        box (List): the coordinate of region</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[int, int, int, int, int]: (angle, width, height, center x, center y)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">,</span> <span class="n">x4</span><span class="p">,</span> <span class="n">y4</span> <span class="o">=</span> <span class="n">box</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span>
+    <span class="n">cx</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span> <span class="o">+</span> <span class="n">x3</span> <span class="o">+</span> <span class="n">x2</span> <span class="o">+</span> <span class="n">x4</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.0</span>
+    <span class="n">cy</span> <span class="o">=</span> <span class="p">(</span><span class="n">y1</span> <span class="o">+</span> <span class="n">y3</span> <span class="o">+</span> <span class="n">y4</span> <span class="o">+</span> <span class="n">y2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.0</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">x3</span> <span class="o">-</span> <span class="n">x4</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y3</span> <span class="o">-</span> <span class="n">y4</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x3</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y3</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">x1</span> <span class="o">-</span> <span class="n">x4</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y1</span> <span class="o">-</span> <span class="n">y4</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="n">sinA</span> <span class="o">=</span> <span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="p">(</span><span class="n">x1</span> <span class="o">-</span> <span class="n">cx</span><span class="p">)</span> <span class="o">-</span> <span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="n">y1</span> <span class="o">-</span> <span class="n">cy</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="n">h</span> <span class="o">+</span> <span class="n">w</span> <span class="o">*</span> <span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">sinA</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">angle</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span></div>
+
+
+<span class="k">def</span> <span class="nf">_order_points</span><span class="p">(</span><span class="n">pts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Extract top left. top right, bottom left, bottom right of region</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pts (np.ndarray[Tuple]): The coordinate of points</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: The coordinate of points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x_sorted</span> <span class="o">=</span> <span class="n">pts</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">pts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="p">:]</span>
+
+    <span class="n">left_most</span> <span class="o">=</span> <span class="n">x_sorted</span><span class="p">[:</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">right_most</span> <span class="o">=</span> <span class="n">x_sorted</span><span class="p">[</span><span class="mi">2</span><span class="p">:,</span> <span class="p">:]</span>
+    <span class="n">left_most</span> <span class="o">=</span> <span class="n">left_most</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">left_most</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]),</span> <span class="p">:]</span>
+    <span class="p">(</span><span class="n">tl</span><span class="p">,</span> <span class="n">bl</span><span class="p">)</span> <span class="o">=</span> <span class="n">left_most</span>
+
+    <span class="n">distance</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">cdist</span><span class="p">(</span><span class="n">tl</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="n">right_most</span><span class="p">,</span> <span class="s2">&quot;euclidean&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">(</span><span class="n">br</span><span class="p">,</span> <span class="n">tr</span><span class="p">)</span> <span class="o">=</span> <span class="n">right_most</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">distance</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">tl</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">br</span><span class="p">,</span> <span class="n">bl</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="image_location_sort_box"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.image_location_sort_box">[docs]</a><span class="k">def</span> <span class="nf">image_location_sort_box</span><span class="p">(</span><span class="n">box</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Sort and extract the coordinate of points</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        box (List): the coordinate of region</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List: the sorted coordinate of region</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">,</span> <span class="n">x4</span><span class="p">,</span> <span class="n">y4</span> <span class="o">=</span> <span class="n">box</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span>
+    <span class="n">pts</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span> <span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">),</span> <span class="p">(</span><span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">),</span> <span class="p">(</span><span class="n">x4</span><span class="p">,</span> <span class="n">y4</span><span class="p">)</span>
+    <span class="n">arr_pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span> <span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">),</span> <span class="p">(</span><span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">),</span> <span class="p">(</span><span class="n">x4</span><span class="p">,</span> <span class="n">y4</span><span class="p">)</span> <span class="o">=</span> <span class="n">_order_points</span><span class="p">(</span><span class="n">arr_pts</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">,</span> <span class="n">x4</span><span class="p">,</span> <span class="n">y4</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_lines_coordinate"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.get_lines_coordinate">[docs]</a><span class="k">def</span> <span class="nf">get_lines_coordinate</span><span class="p">(</span><span class="n">line_mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Extract coordinate of line from  binary image</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        line_mask (np.ndarray): the line binary image</span>
+<span class="sd">        axis (int): if axis=0, line_mask is horizontal lines binary image,</span>
+<span class="sd">        otherwise line_mask is vertical lines binary image.</span>
+<span class="sd">        ths (int, optional): The threshold value to ignore noise edge.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: the coordinate of lines.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">boxes</span> <span class="o">=</span> <span class="n">get_table_line</span><span class="p">(</span><span class="n">line_mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">lineW</span><span class="o">=</span><span class="n">ths</span><span class="p">)</span>
+
+    <span class="n">lines_coordinate</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">coor</span> <span class="ow">in</span> <span class="n">boxes</span><span class="p">:</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">coor</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y1</span><span class="p">)</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+        <span class="n">y2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ths</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">ths</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">lines_coordinate</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lines_coordinate</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_table_coordinate"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.get_table_coordinate">[docs]</a><span class="k">def</span> <span class="nf">get_table_coordinate</span><span class="p">(</span><span class="n">hor_lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ver_lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Extract the coordinate of table in image</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hor_lines_coord (np.ndarray): The coordinate of horizontal lines</span>
+<span class="sd">        ver_lines_coord (np.ndarray): The coordinate of vertical lines</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List: The coordinat of table has form (xmin, ymin, xmax, ymax)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tab_x1</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
+    <span class="n">tab_y1</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]),</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="n">tab_x2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]),</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]))</span>
+    <span class="n">tab_y2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]),</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]))</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">tab_x1</span><span class="p">,</span> <span class="n">tab_y1</span><span class="p">,</span> <span class="n">tab_x2</span><span class="p">,</span> <span class="n">tab_y2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="remove_noise"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.remove_noise">[docs]</a><span class="k">def</span> <span class="nf">remove_noise</span><span class="p">(</span>
+    <span class="n">hor_lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">ver_lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">ths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
+    <span class="n">noise_edge_ths</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Remove noise edge from image</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hor_lines (np.ndarray): The coordinate of horizontal lines</span>
+<span class="sd">        ver_lines (np.ndarray): The coordinate of vertical lines</span>
+<span class="sd">        ths (int, optional): Threshold value to group lines which has same coordinate.</span>
+<span class="sd">        noise_edge_ths (float, optional): Threshold value check whether</span>
+<span class="sd">        the line is noise edge or not.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[np.ndarray, np.ndarray]: The coordinate of horizontal and vertical lines.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hor_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">True</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hor_lines</span><span class="p">))</span>
+    <span class="n">ver_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">True</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ver_lines</span><span class="p">))</span>
+    <span class="n">hor_x1</span> <span class="o">=</span> <span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">hor_x2</span> <span class="o">=</span> <span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">hor_y</span> <span class="o">=</span> <span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">ver_x</span> <span class="o">=</span> <span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">ver_y1</span> <span class="o">=</span> <span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">ver_y2</span> <span class="o">=</span> <span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>
+
+    <span class="n">max_hor_length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hor_x2</span> <span class="o">-</span> <span class="n">hor_x1</span><span class="p">)</span>
+    <span class="n">max_ver_length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_y2</span> <span class="o">-</span> <span class="n">ver_y1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">hor_x1</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_x</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">ths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">hor_x1</span><span class="p">):</span>
+            <span class="n">mask_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">hor_x1</span> <span class="o">&gt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">hor_x1</span><span class="p">)</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hor_x1</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">hor_x1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">hor_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hor_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">ver_x</span> <span class="o">&gt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_x</span><span class="p">)</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ver_x</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_x</span><span class="p">)</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">ver_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ver_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">hor_x2</span><span class="p">)</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_x</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">ths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">hor_x2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_x</span><span class="p">):</span>
+            <span class="n">mask_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">hor_x2</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">hor_x2</span><span class="p">)</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hor_x2</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">hor_x2</span><span class="p">)</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">hor_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hor_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">ver_x</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_x</span><span class="p">)</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ver_x</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_x</span><span class="p">)</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">ver_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ver_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">hor_y</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_y1</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">ths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">hor_y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_y1</span><span class="p">):</span>
+            <span class="n">mask_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">ver_y1</span> <span class="o">&gt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_y1</span><span class="p">)</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ver_y1</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">ver_y1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">ver_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ver_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">hor_y</span> <span class="o">&gt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">hor_y</span><span class="p">)</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hor_y</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">hor_y</span><span class="p">)</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">hor_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hor_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">hor_y</span><span class="p">)</span> <span class="o">-</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_y2</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">ths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">hor_y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_y2</span><span class="p">):</span>
+            <span class="n">mask_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">hor_y</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">hor_y</span><span class="p">)</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hor_y</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">hor_y</span><span class="p">)</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">hor_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">hor_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">ver_y2</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_y2</span><span class="p">)</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ver_y2</span> <span class="o">&lt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">ver_y2</span><span class="p">)</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">ver_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">ver_mask</span><span class="p">[</span><span class="n">mask_index</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">stat</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hor_mask</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">stat</span><span class="p">:</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hor_lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">/</span> <span class="n">max_hor_length</span> <span class="o">&gt;</span> <span class="n">noise_edge_ths</span><span class="p">:</span>
+                <span class="n">hor_mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">stat</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ver_mask</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">stat</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ver_lines</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">/</span> <span class="n">max_ver_length</span> <span class="o">&gt;</span> <span class="n">noise_edge_ths</span><span class="p">:</span>
+                <span class="n">ver_mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="n">hor_lines</span><span class="p">[</span><span class="n">hor_mask</span><span class="p">],</span> <span class="n">ver_lines</span><span class="p">[</span><span class="n">ver_mask</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_coordinates"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.get_coordinates">[docs]</a><span class="k">def</span> <span class="nf">get_coordinates</span><span class="p">(</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">kernel_len</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;This function extract the coordinate of table, horizontal and vertical lines.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mask (np.darray): A binary table image</span>
+<span class="sd">        ths (int, optional): Threshold value to ignore the lines</span>
+<span class="sd">        has not same y coordinate for horizontal lines or x coordinate</span>
+<span class="sd">        for vertical lines. Defaults to 5.</span>
+<span class="sd">        kernel_len (int, optional): The size of kernel is applied.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: will be raised if the number of detected lines is not enough to</span>
+<span class="sd">            rebuild the table</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[List, np.ndarray, np.ndarray]: Tuple contain the coordinate of</span>
+<span class="sd">        table, vertical and horizontal lines.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># get horizontal lines mask image</span>
+    <span class="n">horizontal_lines_mask</span> <span class="o">=</span> <span class="n">get_hor_lines_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">kernel_len</span><span class="p">)</span>
+
+    <span class="c1"># get vertical lines mask image</span>
+    <span class="n">vertical_lines_mask</span> <span class="o">=</span> <span class="n">get_ver_lines_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">kernel_len</span><span class="p">)</span>
+
+    <span class="c1"># get coordinate of horizontal and vertical lines</span>
+    <span class="n">hor_lines</span> <span class="o">=</span> <span class="n">get_lines_coordinate</span><span class="p">(</span><span class="n">horizontal_lines_mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="n">ths</span><span class="p">)</span>
+    <span class="n">ver_lines</span> <span class="o">=</span> <span class="n">get_lines_coordinate</span><span class="p">(</span><span class="n">vertical_lines_mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="n">ths</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hor_lines</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ver_lines</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Empty line coords array&quot;</span><span class="p">)</span>
+    <span class="c1"># remove noise edge</span>
+    <span class="n">hor_lines</span><span class="p">,</span> <span class="n">ver_lines</span> <span class="o">=</span> <span class="n">remove_noise</span><span class="p">(</span><span class="n">hor_lines</span><span class="p">,</span> <span class="n">ver_lines</span><span class="p">,</span> <span class="n">ths</span><span class="p">)</span>
+
+    <span class="c1"># get coordinate of table</span>
+    <span class="n">tab_x1</span><span class="p">,</span> <span class="n">tab_y1</span><span class="p">,</span> <span class="n">tab_x2</span><span class="p">,</span> <span class="n">tab_y2</span> <span class="o">=</span> <span class="n">get_table_coordinate</span><span class="p">(</span><span class="n">hor_lines</span><span class="p">,</span> <span class="n">ver_lines</span><span class="p">)</span>
+
+    <span class="c1"># preserve sure that all table has 4 borders</span>
+    <span class="n">new_ver_lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">new_hor_lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">ver_lines</span><span class="p">:</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">e</span>
+
+        <span class="c1"># dont add left and right border</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x1</span> <span class="o">-</span> <span class="n">tab_x1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ths</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">tab_x2</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ths</span><span class="p">:</span>
+            <span class="n">new_ver_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">hor_lines</span><span class="p">:</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">e</span>
+
+        <span class="c1"># dont add top and bottom border</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">y1</span> <span class="o">-</span> <span class="n">tab_y1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ths</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">tab_y2</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ths</span><span class="p">:</span>
+            <span class="n">new_hor_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">])</span>
+
+    <span class="c1"># add top, bottom ,left, right border</span>
+    <span class="n">new_ver_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">tab_x1</span><span class="p">,</span> <span class="n">tab_y1</span><span class="p">,</span> <span class="n">tab_x1</span><span class="p">,</span> <span class="n">tab_y2</span><span class="p">])</span>
+    <span class="n">new_ver_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">tab_x2</span><span class="p">,</span> <span class="n">tab_y1</span><span class="p">,</span> <span class="n">tab_x2</span><span class="p">,</span> <span class="n">tab_y2</span><span class="p">])</span>
+    <span class="n">new_hor_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">tab_x1</span><span class="p">,</span> <span class="n">tab_y1</span><span class="p">,</span> <span class="n">tab_x2</span><span class="p">,</span> <span class="n">tab_y1</span><span class="p">])</span>
+    <span class="n">new_hor_lines</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">tab_x1</span><span class="p">,</span> <span class="n">tab_y2</span><span class="p">,</span> <span class="n">tab_x2</span><span class="p">,</span> <span class="n">tab_y2</span><span class="p">])</span>
+
+    <span class="c1"># normalize</span>
+    <span class="n">final_hor_lines</span> <span class="o">=</span> <span class="n">normalize_v1</span><span class="p">(</span><span class="n">new_hor_lines</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="n">ths</span><span class="p">)</span>
+    <span class="n">final_ver_lines</span> <span class="o">=</span> <span class="n">normalize_v1</span><span class="p">(</span><span class="n">new_ver_lines</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="n">ths</span><span class="p">)</span>
+    <span class="n">final_hor_lines</span><span class="p">,</span> <span class="n">final_ver_lines</span> <span class="o">=</span> <span class="n">normalize_v2</span><span class="p">(</span><span class="n">final_ver_lines</span><span class="p">,</span> <span class="n">final_hor_lines</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">tab_x1</span><span class="p">,</span> <span class="n">tab_y1</span><span class="p">,</span> <span class="n">tab_x2</span><span class="p">,</span> <span class="n">tab_y2</span><span class="p">],</span> <span class="n">final_ver_lines</span><span class="p">,</span> <span class="n">final_hor_lines</span></div>
+
+
+<div class="viewcode-block" id="normalize_v1"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.normalize_v1">[docs]</a><span class="k">def</span> <span class="nf">normalize_v1</span><span class="p">(</span><span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ths</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Normalize the coordinate of vertical lines or horizontal lines</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lines (List[List]): The coordinate of horizontal lines or vertical lines.</span>
+<span class="sd">        axis (int): If 0, lines is horizontal lines, otherwise vertical lines.</span>
+<span class="sd">        ths (int, optional): Threshold value to group the lines</span>
+<span class="sd">        has same x or y coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: The normalized coordinate of lines.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">filter_lines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lines</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">id_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filter_lines</span><span class="p">))</span>
+    <span class="n">x1_coords</span> <span class="o">=</span> <span class="n">filter_lines</span><span class="o">.</span><span class="n">copy</span><span class="p">()[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">y1_coords</span> <span class="o">=</span> <span class="n">filter_lines</span><span class="o">.</span><span class="n">copy</span><span class="p">()[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">x2_coords</span> <span class="o">=</span> <span class="n">filter_lines</span><span class="o">.</span><span class="n">copy</span><span class="p">()[:,</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">y2_coords</span> <span class="o">=</span> <span class="n">filter_lines</span><span class="o">.</span><span class="n">copy</span><span class="p">()[:,</span> <span class="mi">3</span><span class="p">]</span>
+
+    <span class="c1"># horizontal</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># equalize x1</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">x1_coords</span><span class="p">):</span>
+            <span class="n">x1_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;</span> <span class="n">x1_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x1_coords</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x1_coords</span><span class="p">[</span><span class="n">x1_mask</span><span class="p">])</span>
+
+            <span class="n">filter_lines</span><span class="p">[</span><span class="n">id_range</span><span class="p">[</span><span class="n">x1_mask</span><span class="p">],</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+        <span class="c1"># equalize x2</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">x2_coords</span><span class="p">):</span>
+            <span class="n">x2_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;</span> <span class="n">x2_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x2_coords</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x2_coords</span><span class="p">[</span><span class="n">x2_mask</span><span class="p">])</span>
+
+            <span class="n">filter_lines</span><span class="p">[</span><span class="n">id_range</span><span class="p">[</span><span class="n">x2_mask</span><span class="p">],</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+        <span class="c1"># equalize y</span>
+        <span class="n">concat_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">y1_coords</span><span class="p">,</span> <span class="n">y2_coords</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">concat_y</span><span class="p">):</span>
+            <span class="n">y1_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;</span> <span class="n">y1_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y1_coords</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">y2_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;</span> <span class="n">y2_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y2_coords</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+
+            <span class="n">filter_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">y1_coords</span><span class="p">[</span><span class="n">y1_mask</span><span class="p">],</span> <span class="n">y2_coords</span><span class="p">[</span><span class="n">y2_mask</span><span class="p">]))</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">filter_y</span><span class="p">))</span>
+
+            <span class="n">filter_lines</span><span class="p">[</span><span class="n">id_range</span><span class="p">[</span><span class="n">y1_mask</span><span class="p">],</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+            <span class="n">filter_lines</span><span class="p">[</span><span class="n">id_range</span><span class="p">[</span><span class="n">y2_mask</span><span class="p">],</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># vertical</span>
+        <span class="c1"># equalize y1</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y1_coords</span><span class="p">):</span>
+            <span class="n">y1_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;</span> <span class="n">y1_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y1_coords</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y1_coords</span><span class="p">[</span><span class="n">y1_mask</span><span class="p">])</span>
+
+            <span class="n">filter_lines</span><span class="p">[</span><span class="n">id_range</span><span class="p">[</span><span class="n">y1_mask</span><span class="p">],</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+        <span class="c1"># equalize y2</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">y2_coords</span><span class="p">):</span>
+            <span class="n">y2_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;</span> <span class="n">y2_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y2_coords</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y2_coords</span><span class="p">[</span><span class="n">y2_mask</span><span class="p">])</span>
+
+            <span class="n">filter_lines</span><span class="p">[</span><span class="n">id_range</span><span class="p">[</span><span class="n">y2_mask</span><span class="p">],</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+        <span class="c1"># equalize x</span>
+        <span class="n">concat_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">x1_coords</span><span class="p">,</span> <span class="n">x2_coords</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">concat_x</span><span class="p">):</span>
+            <span class="n">x1_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;</span> <span class="n">x1_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x1_coords</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">x2_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;</span> <span class="n">x2_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x2_coords</span> <span class="o">&lt;</span> <span class="n">v</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">filter_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">x1_coords</span><span class="p">[</span><span class="n">x1_mask</span><span class="p">],</span> <span class="n">x2_coords</span><span class="p">[</span><span class="n">x2_mask</span><span class="p">]))</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">filter_x</span><span class="p">))</span>
+
+            <span class="n">filter_lines</span><span class="p">[</span><span class="n">id_range</span><span class="p">[</span><span class="n">x1_mask</span><span class="p">],</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+            <span class="n">filter_lines</span><span class="p">[</span><span class="n">id_range</span><span class="p">[</span><span class="n">x2_mask</span><span class="p">],</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+    <span class="k">return</span> <span class="n">filter_lines</span></div>
+
+
+<div class="viewcode-block" id="normalize_v2"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.normalize_v2">[docs]</a><span class="k">def</span> <span class="nf">normalize_v2</span><span class="p">(</span>
+    <span class="n">ver_lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">hor_lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Normalize the coordinate between vertical lines and horizontal lines</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ver_lines_coord (np.ndarray): The coordinate of vertical lines</span>
+<span class="sd">        hor_lines_coord (np.ndarray): The coordinate of horizontal lines</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple(np.ndarray, np.ndarray): the normalized coordinate of</span>
+<span class="sd">        horizontal and vertical lines</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># normalize x1</span>
+    <span class="n">ver_x1</span> <span class="o">=</span> <span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">hor_x1</span> <span class="o">=</span> <span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hor_x1</span><span class="p">):</span>
+        <span class="n">concat_coor</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(([</span><span class="n">x1</span><span class="p">],</span> <span class="n">ver_x1</span><span class="p">)))</span>
+        <span class="n">tgt_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">concat_coor</span> <span class="o">==</span> <span class="n">x1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1</span><span class="p">):</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">hor_lines</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+    <span class="c1"># normalize x2</span>
+    <span class="n">ver_x2</span> <span class="o">=</span> <span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">hor_x2</span> <span class="o">=</span> <span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hor_x2</span><span class="p">):</span>
+        <span class="n">concat_coor</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(([</span><span class="n">x2</span><span class="p">],</span> <span class="n">ver_x2</span><span class="p">)))</span>
+        <span class="n">tgt_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">concat_coor</span> <span class="o">==</span> <span class="n">x2</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x2</span><span class="p">):</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">hor_lines</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+    <span class="c1"># normalize y1</span>
+    <span class="n">ver_y1</span> <span class="o">=</span> <span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">hor_y1</span> <span class="o">=</span> <span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">y1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ver_y1</span><span class="p">):</span>
+        <span class="n">concat_coor</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(([</span><span class="n">y1</span><span class="p">],</span> <span class="n">hor_y1</span><span class="p">)))</span>
+        <span class="n">tgt_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">concat_coor</span> <span class="o">==</span> <span class="n">y1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y1</span><span class="p">):</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">ver_lines</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+    <span class="c1"># normalize y2</span>
+    <span class="n">ver_y2</span> <span class="o">=</span> <span class="n">ver_lines</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">hor_y2</span> <span class="o">=</span> <span class="n">hor_lines</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">y2</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ver_y2</span><span class="p">):</span>
+        <span class="n">concat_coor</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(([</span><span class="n">y2</span><span class="p">],</span> <span class="n">hor_y2</span><span class="p">)))</span>
+        <span class="n">tgt_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">concat_coor</span> <span class="o">==</span> <span class="n">y2</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y2</span><span class="p">):</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">update_coord</span> <span class="o">=</span> <span class="n">concat_coor</span><span class="p">[</span><span class="n">tgt_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">ver_lines</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">update_coord</span>
+
+    <span class="k">return</span> <span class="n">hor_lines</span><span class="p">,</span> <span class="n">ver_lines</span></div>
+
+
+<div class="viewcode-block" id="is_line"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.lines_utils.is_line">[docs]</a><span class="k">def</span> <span class="nf">is_line</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ths</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Check whether the coordinate is the coordinate of an existing line or not.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        line (List): The coordinate of line</span>
+<span class="sd">        lines (np.ndarray): The coordinate of lines</span>
+<span class="sd">        axis (int): If axis == 0 lines is horizontal line, otherwise vertical lines.</span>
+<span class="sd">        thresh (float): The threshold value to group line which has same x, y coordinate</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: returns True if the coordinate is coordinate of an existing line,</span>
+<span class="sd">        otherwise returns False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">line</span>
+
+    <span class="c1"># horizontal</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">y1_coord_list</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">lines_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">y1_coord_list</span> <span class="o">&gt;</span> <span class="n">y1</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y1_coord_list</span> <span class="o">&lt;</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+        <span class="n">sub_h_lines</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">lines_mask</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">coor</span> <span class="ow">in</span> <span class="n">sub_h_lines</span><span class="p">:</span>
+            <span class="n">line_x1</span><span class="p">,</span> <span class="n">line_y1</span><span class="p">,</span> <span class="n">line_x2</span><span class="p">,</span> <span class="n">line_y2</span> <span class="o">=</span> <span class="n">coor</span>
+
+            <span class="k">if</span> <span class="n">line_x1</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;=</span> <span class="n">x1</span> <span class="o">&lt;</span> <span class="n">x2</span> <span class="o">&lt;=</span> <span class="n">line_x2</span> <span class="o">+</span> <span class="n">ths</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+    <span class="c1"># vertical</span>
+    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">x1_coord_list</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">lines_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1_coord_list</span> <span class="o">&gt;</span> <span class="n">x1</span> <span class="o">-</span> <span class="n">ths</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x1_coord_list</span> <span class="o">&lt;</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">ths</span><span class="p">)</span>
+        <span class="n">sub_v_lines</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">lines_mask</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">coor</span> <span class="ow">in</span> <span class="n">sub_v_lines</span><span class="p">:</span>
+            <span class="n">line_x1</span><span class="p">,</span> <span class="n">line_y1</span><span class="p">,</span> <span class="n">line_x2</span><span class="p">,</span> <span class="n">line_y2</span> <span class="o">=</span> <span class="n">coor</span>
+
+            <span class="k">if</span> <span class="n">line_y1</span> <span class="o">-</span> <span class="n">ths</span> <span class="o">&lt;=</span> <span class="n">y1</span> <span class="o">&lt;</span> <span class="n">y2</span> <span class="o">&lt;=</span> <span class="n">line_y2</span> <span class="o">+</span> <span class="n">ths</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="kc">False</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Sun* Research.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

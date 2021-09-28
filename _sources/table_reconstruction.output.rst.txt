@@ -1,0 +1,37 @@
+table\_reconstruction.output package
+====================================
+
+Submodules
+----------
+
+table\_reconstruction.output.cell module
+----------------------------------------
+
+.. automodule:: table_reconstruction.output.cell
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.output.element module
+-------------------------------------------
+
+.. automodule:: table_reconstruction.output.element
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+table\_reconstruction.output.table module
+-----------------------------------------
+
+.. automodule:: table_reconstruction.output.table
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: table_reconstruction.output
+   :members:
+   :undoc-members:
+   :show-inheritance:

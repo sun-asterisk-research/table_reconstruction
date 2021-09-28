@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>table_reconstruction.utils.table_utils &mdash; Table Reconstuction  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Table Reconstuction
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Table Reconstuction</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../table_reconstruction.html">table_reconstruction</a> &raquo;</li>
+      <li>table_reconstruction.utils.table_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for table_reconstruction.utils.table_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="DirectedGraph"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.DirectedGraph">[docs]</a><span class="k">class</span> <span class="nc">DirectedGraph</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="DirectedGraph.__init__"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.DirectedGraph.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nb_vertices</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize DirectedGraph class</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            nb_vertices (int): the number of vertices</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nb_vertices</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">nb_vertices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_vertices</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undirected_vertex</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_vertices</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">span_cell_ids</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="DirectedGraph.add_edge"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.DirectedGraph.add_edge">[docs]</a>    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">id_a</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">id_b</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add edge to graph</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            id_a (int): Index of cell a</span>
+<span class="sd">            id_b (int): Index of cell b</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">id_a</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_b</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undirected_vertex</span><span class="p">[</span><span class="n">id_a</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_b</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undirected_vertex</span><span class="p">[</span><span class="n">id_b</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_a</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_span_cell</span><span class="p">(</span><span class="n">id_a</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">span_cell_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_a</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_span_cell</span><span class="p">(</span><span class="n">id_b</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">span_cell_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_b</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">id_a</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">id_a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">span_cell_ids</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">span_cell_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_a</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DirectedGraph.add_edges"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.DirectedGraph.add_edges">[docs]</a>    <span class="k">def</span> <span class="nf">add_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">couple_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add index of vertices (cell) to graph</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            couple_ids (List): the list index of couple vertice indexes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">couple_id</span> <span class="ow">in</span> <span class="n">couple_ids</span><span class="p">:</span>
+            <span class="n">id_a</span><span class="p">,</span> <span class="n">id_b</span> <span class="o">=</span> <span class="n">couple_id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">id_a</span><span class="p">,</span> <span class="n">id_b</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">span_cell_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">span_cell_ids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">span_cell_id</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">span_cell_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">span_cell_id</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="DirectedGraph.check_span_cell"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.DirectedGraph.check_span_cell">[docs]</a>    <span class="k">def</span> <span class="nf">check_span_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vertex_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Check whether cell is span cell or not</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vertex_id (int): the index of cell</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Bool: if cell is span cell, return True, otherwise return False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">undirected_vertex</span><span class="p">[</span><span class="n">vertex_id</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vertex_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">span_cell_ids</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="DirectedGraph.dfs"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.DirectedGraph.dfs">[docs]</a>    <span class="k">def</span> <span class="nf">dfs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dp</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">vis</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Use Depth First Search algorithm to search longest path from specific vertex.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            v (int): the index of specific cell</span>
+<span class="sd">            dp (List): distances to all vertices</span>
+<span class="sd">            vis (List): visited status</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">vis</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># traverse for all its children</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">])):</span>
+            <span class="c1"># if not visited:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">vis</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">i</span><span class="p">]]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dfs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">dp</span><span class="p">,</span> <span class="n">vis</span><span class="p">)</span>
+
+            <span class="c1"># store the max of the paths</span>
+            <span class="n">dp</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dp</span><span class="p">[</span><span class="n">v</span><span class="p">],</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">dp</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">i</span><span class="p">]])</span></div>
+
+<div class="viewcode-block" id="DirectedGraph.findLongestPath"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.DirectedGraph.findLongestPath">[docs]</a>    <span class="k">def</span> <span class="nf">findLongestPath</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Function that returns the longest path in graph</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: the maximum distance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Dp array: dp[i] be the length of the longest path starting from the node i.</span>
+        <span class="n">dp</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nb_vertices</span>
+
+        <span class="c1"># Visited array to know if the node</span>
+        <span class="c1"># has been visited previously or not</span>
+        <span class="n">vis</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb_vertices</span><span class="p">)</span>
+
+        <span class="c1"># Call DFS for every unvisited vertex</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nb_vertices</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">vis</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dfs</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">dp</span><span class="p">,</span> <span class="n">vis</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">dp</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span></div></div>
+
+
+<div class="viewcode-block" id="convertId2DocxCoord"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.convertId2DocxCoord">[docs]</a><span class="k">def</span> <span class="nf">convertId2DocxCoord</span><span class="p">(</span><span class="n">cell_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">nb_col</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Find the XY coordinate of a know point</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cell_id (int): the index of cell</span>
+<span class="sd">        nb_col (int): the number columns of table</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: the XY coordinate corresponding to the index of cell</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">cell_id</span> <span class="o">%</span> <span class="n">nb_col</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">cell_id</span> <span class="o">//</span> <span class="n">nb_col</span>
+
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span></div>
+
+
+<div class="viewcode-block" id="convertSpanCell2DocxCoord"><a class="viewcode-back" href="../../../table_reconstruction.utils.html#table_reconstruction.utils.table_utils.convertSpanCell2DocxCoord">[docs]</a><span class="k">def</span> <span class="nf">convertSpanCell2DocxCoord</span><span class="p">(</span>
+    <span class="n">cells</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">],</span>
+    <span class="n">fake_cells</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">],</span>
+    <span class="n">span_cell_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span>
+    <span class="n">nb_col</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">thresh</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Find the XY coordinate of span cells</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cells (List[List]): the coordinate of cells</span>
+<span class="sd">        fake_cells (List[List]): the coordinate of fake cells</span>
+<span class="sd">        span_cell_ids (List): the index of span cells</span>
+<span class="sd">        nb_col (int): number columns in table</span>
+<span class="sd">        thresh (int, optional): threshold value to group the same x, y coordinate.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[Dict]: the XY coordinate of span cells</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fake_x1_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fake_cells</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">fake_x2_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fake_cells</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">fake_y1_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fake_cells</span><span class="p">)[:,</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="n">fake_y2_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fake_cells</span><span class="p">)[:,</span> <span class="mi">3</span><span class="p">]</span>
+    <span class="n">id_range</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fake_cells</span><span class="p">))</span>
+    <span class="n">docx_coords</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">span_cell_ids</span><span class="p">:</span>
+        <span class="n">docx_coor</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">cells</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="n">x_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span> <span class="o">-</span> <span class="n">thresh</span> <span class="o">&lt;=</span> <span class="n">fake_x1_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fake_x2_coords</span> <span class="o">&lt;=</span> <span class="n">x2</span> <span class="o">+</span> <span class="n">thresh</span><span class="p">)</span>
+        <span class="n">y_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">y1</span> <span class="o">-</span> <span class="n">thresh</span> <span class="o">&lt;=</span> <span class="n">fake_y1_coords</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fake_y2_coords</span> <span class="o">&lt;=</span> <span class="n">y2</span> <span class="o">+</span> <span class="n">thresh</span><span class="p">)</span>
+        <span class="n">coord_mask</span> <span class="o">=</span> <span class="n">x_mask</span> <span class="o">&amp;</span> <span class="n">y_mask</span>
+
+        <span class="n">filter_ids</span> <span class="o">=</span> <span class="n">id_range</span><span class="p">[</span><span class="n">coord_mask</span><span class="p">]</span>
+        <span class="n">x_start_idx</span> <span class="o">=</span> <span class="mi">10000</span>
+        <span class="n">x_end_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">y_start_idx</span> <span class="o">=</span> <span class="mi">10000</span>
+        <span class="n">y_end_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">cell_id</span> <span class="ow">in</span> <span class="n">filter_ids</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">convertId2DocxCoord</span><span class="p">(</span><span class="n">cell_id</span><span class="p">,</span> <span class="n">nb_col</span><span class="p">)</span>
+            <span class="n">x_start_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">x_start_idx</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">x_end_idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">x_end_idx</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">y_start_idx</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">y_start_idx</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">y_end_idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">y_end_idx</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="n">docx_coor</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+        <span class="n">docx_coor</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_start_idx</span><span class="p">,</span> <span class="n">x_end_idx</span><span class="p">]</span>
+        <span class="n">docx_coor</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y_start_idx</span><span class="p">,</span> <span class="n">y_end_idx</span><span class="p">]</span>
+        <span class="n">docx_coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">docx_coor</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">docx_coords</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Sun* Research.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
